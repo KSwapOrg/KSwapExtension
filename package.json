@@ -9,8 +9,7 @@
     "build:background": "echo 'Building background...' && npm run copy-libs",
     "build:content": "echo 'Building content scripts...'",
     "copy-libs": "cp -r ../KSwap/node_modules/@keetanetwork ./node_modules/",
-    "dev": "npm run build && echo 'Load the extension from Chrome Extensions page'",
-    "package": "zip -r keeta-wallet-extension.zip . -x node_modules/\\* .git/\\* \\*.log",
+    "dev": "npm run build && echo 'Load the extension from Chrome Extensions page'"    "package": "npm run build && cd build && zip -r ../keeta-wallet-extension.zip . -x node_modules/\\* .git/\\* \\*.log",
     "lint": "echo 'Linting...'",
     "test": "echo 'Testing...'"
   },

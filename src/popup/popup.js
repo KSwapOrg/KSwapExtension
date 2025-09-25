@@ -136,10 +136,12 @@ class WalletPopup {
 
   async createNewWallet() {
     try {
-      // Import wallet client (this would need to be bundled)
-      const { KeetaWalletClient } = await import('../lib/wallet-client.js');
+      // Use global KeetaWalletClient
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
       
-      this.wallet = await KeetaWalletClient.initialize(this.currentNetwork);
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork);
       
       // Store seed securely
       await chrome.storage.local.set({
@@ -158,10 +160,12 @@ class WalletPopup {
 
   async loadExistingWallet(seed) {
     try {
-      // Import wallet client (this would need to be bundled)
-      const { KeetaWalletClient } = await import('../lib/wallet-client.js');
+      // Use global KeetaWalletClient
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
       
-      this.wallet = await KeetaWalletClient.initialize(this.currentNetwork, seed);
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, seed);
       
       await this.updateWalletDisplay();
       this.updateStatus('connected', 'Connected');

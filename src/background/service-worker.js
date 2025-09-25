@@ -7,6 +7,7 @@ class WalletBackground {
     this.connectedSites = new Set();
     
     this.setupEventListeners();
+    this.loadWalletClient();
   }
 
   setupEventListeners() {
@@ -40,11 +41,11 @@ class WalletBackground {
       const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork']);
       
       if (result.walletSeed) {
-        // Import wallet client
-        const { KeetaWalletClient } = await import('../lib/wallet-client.js');
+        // Import wallet client - load it dynamically
+        await this.loadWalletClient();
         
         const network = result.selectedNetwork || 'testnet';
-        this.wallet = await KeetaWalletClient.initialize(network, result.walletSeed);
+        this.wallet = await self.KeetaWalletClient.initialize(network, result.walletSeed);
         
         console.log('Wallet initialized in background');
       }
@@ -339,6 +340,15 @@ class WalletBackground {
       if (request.tabId === tabId) {
         this.pendingRequests.delete(requestId);
       }
+    }
+  }
+
+  async loadWalletClient() {
+    // Import wallet client in service worker context
+    try {
+      await import('../lib/wallet-client.js');
+    } catch (error) {
+      console.error('Failed to load wallet client:', error);
     }
   }
 }

@@ -13,6 +13,13 @@ cp manifest.json build/
 cp -r src build/
 cp -r icons build/
 
+# Use KSwap logo for all icon sizes
+echo "🎨 Setting up icons..."
+cp icons/KSwapLogo.png build/icons/icon16.png
+cp icons/KSwapLogo.png build/icons/icon32.png
+cp icons/KSwapLogo.png build/icons/icon48.png
+cp icons/KSwapLogo.png build/icons/icon128.png
+
 # Copy dependencies (if available)
 if [ -d "node_modules" ]; then
     echo "📦 Copying dependencies..."

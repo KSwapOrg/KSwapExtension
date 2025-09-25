@@ -1,13 +1,5 @@
-import * as KeetaNet from '@keetanetwork/keetanet-client';
-import {
-  TokenId,
-  AccountId,
-  TokenInfo,
-  NetworkConfig,
-  NETWORK_CONFIGS,
-  KSwapError,
-  KSwapErrorCode,
-} from '../types';
+// Import will be handled globally in the extension context
+// const KeetaNet = window.KeetaNetSDK;
 
 /**
  * Keeta Wallet Client - Core wallet functionality for Chrome extension

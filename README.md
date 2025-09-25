@@ -55,7 +55,7 @@ A secure Chrome extension wallet for the Keeta Network, extracted and adapted fr
    - The Keeta Wallet icon should appear in your extensions bar
 
 ### From Chrome Web Store
-*Coming soon - extension will be published after testing*
+Releases are packaged automatically. Once approved, you'll find the latest version on the Chrome Web Store.
 
 ## Usage
 
@@ -226,6 +226,9 @@ npm run build
 
 # Package for distribution
 npm run package
+
+# Release (semantic-release)
+npm run release
 ```
 
 ## Compatibility
@@ -255,7 +258,14 @@ npm run package
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Business Source License 1.1 (BSL)
+
+1. Effective Date: 2025-09-25
+2. Change Date: 2027-09-25
+3. Change License: MIT (the code converts to MIT on the Change Date)
+4. Additional Use Grant: Non‑commercial use and any use on the Keeta Network is permitted. Production/commercial use outside the Keeta Network requires a commercial license from KSwap Organization.
+
+We welcome community help and contributions to grow the Keeta ecosystem, but we aim to deter low‑effort copycats and rebrands. Please see `TRADEMARKS.md`.
 
 ## Acknowledgments
 
@@ -268,6 +278,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: [GitHub Issues](https://github.com/KSwapOrg/KSwapExtension/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/KSwapOrg/KSwapExtension/discussions)
 - **K-Swap Discord**: Community support and development chat
+
+## Publishing & Automation
+
+GitHub Actions automates builds and releases. To enable Chrome Web Store uploads, configure these repository secrets:
+
+1. `CHROME_CLIENT_ID`
+2. `CHROME_CLIENT_SECRET`
+3. `CHROME_REFRESH_TOKEN`
+4. `CHROME_EXTENSION_ID`
+
+A zip named `keeta-wallet-extension-clean.zip` is produced on each release and uploaded.
 
 ---
 

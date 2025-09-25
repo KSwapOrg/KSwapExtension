@@ -11,6 +11,8 @@
     "copy-libs": "cp -r ../KSwap/node_modules/@keetanetwork ./node_modules/",
     "dev": "npm run build && echo 'Load the extension from Chrome Extensions page'",
     "package": "npm run build && mkdir -p dist && cp build/manifest.json dist/ && cp -r build/src dist/ && cp -r build/icons dist/ && cd dist && zip -r ../keeta-wallet-extension-clean.zip .",
+    "release": "semantic-release",
+    "version:bump": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1 || true",
     "lint": "echo 'Linting...'",
     "test": "echo 'Testing...'"
   },
@@ -22,12 +24,17 @@
     "defi"
   ],
   "author": "KSwap Organization",
-  "license": "MIT",
+  "license": "BSL-1.1",
   "dependencies": {
     "@keetanetwork/keetanet-client": "latest"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.246"
+    "@types/chrome": "^0.0.246",
+    "semantic-release": "^23.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.0.7",
+    "conventional-changelog-cli": "^4.1.0"
   },
   "repository": {
     "type": "git",

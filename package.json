@@ -10,7 +10,7 @@
     "build:content": "echo 'Building content scripts...'",
     "copy-libs": "cp -r ../KSwap/node_modules/@keetanetwork ./node_modules/",
     "dev": "npm run build && echo 'Load the extension from Chrome Extensions page'",
-    "package": "rm -f *.zip && npm run build && mkdir -p dist && cp build/manifest.json dist/ && cp -r build/src dist/ && cp -r build/icons dist/ && cd dist && zip -r ../keeta-wallet-extension-clean.zip .",
+    "package": "rm -f *.zip && npm run build && mkdir -p dist && cp build/manifest.json dist/ && cp -r build/src dist/ && cp -r build/icons dist/ && mkdir -p dist/node_modules/@keetanetwork/keetanet-client/client && cp build/node_modules/@keetanetwork/keetanet-client/client/index-browser.js dist/node_modules/@keetanetwork/keetanet-client/client/ && cd dist && zip -r ../keeta-wallet-extension-clean.zip .",
     "release": "semantic-release",
     "version:bump": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1 || true",
     "lint": "echo 'Linting...'",

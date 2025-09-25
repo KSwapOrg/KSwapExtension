@@ -13,19 +13,21 @@ cp manifest.json build/
 cp -r src build/
 cp -r icons build/
 
-# Use KSwap logo for all icon sizes
-echo "🎨 Setting up icons..."
-cp icons/KSwapLogo.png build/icons/icon16.png
-cp icons/KSwapLogo.png build/icons/icon32.png
-cp icons/KSwapLogo.png build/icons/icon48.png
-cp icons/KSwapLogo.png build/icons/icon128.png
+# Use optimized icons (much smaller file sizes)
+echo "🎨 Setting up optimized icons..."
+cp icons/icon16-optimized.png build/icons/icon16.png
+cp icons/icon32-optimized.png build/icons/icon32.png
+cp icons/icon48-optimized.png build/icons/icon48.png
+cp icons/icon128-optimized.png build/icons/icon128.png
+cp icons/KSwapLogo.png build/icons/KSwapLogo.png
 
-# Copy dependencies (if available)
-if [ -d "node_modules" ]; then
-    echo "📦 Copying dependencies..."
-    mkdir -p build/node_modules/@keetanetwork/keetanet-client/client
-    cp node_modules/@keetanetwork/keetanet-client/client/index-browser.js build/node_modules/@keetanetwork/keetanet-client/client/ 2>/dev/null || echo "⚠️  Keeta SDK not found - run 'npm install' first"
-    echo "✅ KeetaNet browser SDK copied"
+# Copy KeetaNet SDK to lib folder (avoid node_modules in zip)
+if [ -f "node_modules/@keetanetwork/keetanet-client/client/index-browser.js" ]; then
+    echo "📦 Copying KeetaNet SDK..."
+    cp node_modules/@keetanetwork/keetanet-client/client/index-browser.js build/src/lib/keetanet-browser.js
+    echo "✅ KeetaNet SDK copied to src/lib/"
+else
+    echo "⚠️  Keeta SDK not found - run 'npm install' first"
 fi
 
 echo "✅ Build complete!"

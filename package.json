@@ -1,7 +1,7 @@
 {
-  "name": "keeta-wallet-extension",
+  "name": "kswap-wallet-extension",
   "version": "1.0.0",
-  "description": "A secure Chrome extension wallet for the Keeta Network",
+  "description": "A secure Chrome extension wallet for the Keeta Network by KSwap",
   "main": "manifest.json",
   "scripts": {
     "build": "npm run build:popup && npm run build:background && npm run build:content",

@@ -1,4 +1,4 @@
-# Keeta Wallet Extension
+# KSwap Wallet Extension
 
 A secure Chrome extension wallet for the Keeta Network, extracted and adapted from the K-Swap DEX project.
 

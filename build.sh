@@ -11,15 +11,15 @@ mkdir -p build
 echo "📁 Copying extension files..."
 cp manifest.json build/
 cp -r src build/
-cp -r icons build/
 
-# Use optimized icons (much smaller file sizes)
+# Create icons directory and copy ONLY optimized icons
 echo "🎨 Setting up optimized icons..."
+mkdir -p build/icons
 cp icons/icon16-optimized.png build/icons/icon16.png
 cp icons/icon32-optimized.png build/icons/icon32.png
 cp icons/icon48-optimized.png build/icons/icon48.png
 cp icons/icon128-optimized.png build/icons/icon128.png
-cp icons/KSwapLogo.png build/icons/KSwapLogo.png
+cp icons/icon128-optimized.png build/icons/KSwapLogo.png
 
 # Copy KeetaNet SDK to lib folder (avoid node_modules in zip)
 if [ -f "node_modules/@keetanetwork/keetanet-client/client/index-browser.js" ]; then

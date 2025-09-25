@@ -104,6 +104,31 @@ body {
   border-bottom: 1px solid #e2e8f0;
   font-weight: 500;
   font-size: 14px;
+  justify-content: space-between;
+}
+
+.mode-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.mode-indicator.demo {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.mode-indicator.testnet {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.mode-indicator.mainnet {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .status-indicator {

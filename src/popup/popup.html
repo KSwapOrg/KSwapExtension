@@ -8,7 +8,7 @@
   </head>
   <body>
     <!-- Load wallet client first -->
-    <script src="../lib/wallet-client.js"></script>
+    <script src="../lib/wallet-client-real.js"></script>
   <div id="app">
     <div class="wallet-container">
       <!-- Header -->
@@ -18,9 +18,10 @@
           <h1>Keeta Wallet</h1>
         </div>
         <div class="network-selector">
-          <select id="networkSelect">
-            <option value="testnet">Testnet</option>
-            <option value="mainnet">Mainnet</option>
+          <select id="modeSelect">
+            <option value="demo">Demo Mode</option>
+            <option value="testnet">Testnet (Real)</option>
+            <option value="mainnet">Mainnet (Real)</option>
           </select>
         </div>
       </header>
@@ -29,6 +30,7 @@
       <div id="connectionStatus" class="connection-status">
         <div class="status-indicator"></div>
         <span id="statusText">Connecting...</span>
+        <span id="modeIndicator" class="mode-indicator"></span>
       </div>
 
       <!-- Wallet Content -->

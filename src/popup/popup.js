@@ -3,6 +3,7 @@ class WalletPopup {
   constructor() {
     this.wallet = null;
     this.currentNetwork = 'testnet';
+    this.currentMode = 'demo';
     this.tokens = [];
     
     this.initializeElements();
@@ -21,7 +22,8 @@ class WalletPopup {
     this.tokenList = document.getElementById('tokenList');
     
     // Control elements
-    this.networkSelect = document.getElementById('networkSelect');
+    this.modeSelect = document.getElementById('modeSelect');
+    this.modeIndicator = document.getElementById('modeIndicator');
     this.copyAddressBtn = document.getElementById('copyAddress');
     
     // Action buttons
@@ -49,9 +51,9 @@ class WalletPopup {
   }
 
   attachEventListeners() {
-    // Network selection
-    this.networkSelect.addEventListener('change', (e) => {
-      this.switchNetwork(e.target.value);
+    // Mode selection
+    this.modeSelect.addEventListener('change', (e) => {
+      this.switchMode(e.target.value);
     });
     
     // Copy address
@@ -112,13 +114,14 @@ class WalletPopup {
     try {
       this.updateStatus('connecting', 'Connecting to wallet...');
       
-      // Get stored seed or generate new one
-      const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork']);
+      // Get stored seed and preferences
+      const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork', 'selectedMode']);
       const seed = result.walletSeed;
       this.currentNetwork = result.selectedNetwork || 'testnet';
+      this.currentMode = result.selectedMode || 'demo';
       
-      // Update network selector
-      this.networkSelect.value = this.currentNetwork;
+      // Update mode selector
+      this.modeSelect.value = this.currentMode;
       
       if (!seed) {
         // First time setup - generate new wallet
@@ -141,16 +144,18 @@ class WalletPopup {
         throw new Error('KeetaWalletClient not available');
       }
       
-      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork);
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, null, this.currentMode);
       
-      // Store seed securely
+      // Store seed and preferences securely
       await chrome.storage.local.set({
         walletSeed: this.wallet.getSeed(),
-        selectedNetwork: this.currentNetwork
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode
       });
       
       await this.updateWalletDisplay();
       this.updateStatus('connected', 'Wallet created');
+      this.updateModeIndicator();
       
     } catch (error) {
       console.error('Failed to create wallet:', error);
@@ -165,10 +170,11 @@ class WalletPopup {
         throw new Error('KeetaWalletClient not available');
       }
       
-      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, seed);
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, seed, this.currentMode);
       
       await this.updateWalletDisplay();
       this.updateStatus('connected', 'Connected');
+      this.updateModeIndicator();
       
     } catch (error) {
       console.error('Failed to load wallet:', error);
@@ -255,32 +261,66 @@ class WalletPopup {
     return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
   }
 
-  async switchNetwork(network) {
-    if (network === this.currentNetwork) return;
+  async switchMode(mode) {
+    if (mode === this.currentMode) return;
     
     try {
-      this.showLoading('Switching network...');
+      this.showLoading('Switching mode...');
       
-      if (this.wallet) {
-        await this.wallet.switchNetwork(network);
-      }
+      // Parse mode to get network and mode
+      const [modeType, networkName] = this.parseMode(mode);
       
-      this.currentNetwork = network;
+      // Re-initialize wallet with new mode
+      const seed = this.wallet ? this.wallet.getSeed() : null;
+      this.wallet = await window.KeetaWalletClient.initialize(networkName, seed, modeType);
       
-      // Store network preference
-      await chrome.storage.local.set({ selectedNetwork: network });
+      this.currentMode = mode;
+      this.currentNetwork = networkName;
+      
+      // Store preferences
+      await chrome.storage.local.set({ 
+        selectedMode: mode,
+        selectedNetwork: networkName
+      });
       
       await this.updateWalletDisplay();
-      this.updateStatus('connected', `Connected to ${network}`);
+      this.updateStatus('connected', `Connected to ${mode}`);
+      this.updateModeIndicator();
       
     } catch (error) {
-      console.error('Failed to switch network:', error);
-      this.updateStatus('error', 'Network switch failed');
-      // Revert network selector
-      this.networkSelect.value = this.currentNetwork;
+      console.error('Failed to switch mode:', error);
+      this.updateStatus('error', 'Mode switch failed');
+      // Revert mode selector
+      this.modeSelect.value = this.currentMode;
     } finally {
       this.hideLoading();
     }
+  }
+
+  parseMode(mode) {
+    switch(mode) {
+      case 'demo':
+        return ['demo', 'testnet'];
+      case 'testnet':
+        return ['testnet', 'testnet'];
+      case 'mainnet':
+        return ['mainnet', 'mainnet'];
+      default:
+        return ['demo', 'testnet'];
+    }
+  }
+
+  updateModeIndicator() {
+    if (!this.modeIndicator) return;
+    
+    const modeColors = {
+      'demo': '🎭 Demo',
+      'testnet': '🧪 Test',
+      'mainnet': '🚀 Live'
+    };
+    
+    this.modeIndicator.textContent = modeColors[this.currentMode] || '🎭 Demo';
+    this.modeIndicator.className = `mode-indicator ${this.currentMode}`;
   }
 
   async copyAddress() {

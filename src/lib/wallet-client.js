@@ -168,6 +168,9 @@ class KeetaWalletClient {
 // Make available globally for the extension
 if (typeof window !== 'undefined') {
   window.KeetaWalletClient = KeetaWalletClient;
+} else if (typeof self !== 'undefined') {
+  // Service worker context
+  self.KeetaWalletClient = KeetaWalletClient;
 }
 
 // Also export for modules

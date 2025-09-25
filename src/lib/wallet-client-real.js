@@ -24,22 +24,26 @@ class KeetaWalletClient {
       // Wait for KeetaNet SDK to load
       await KeetaWalletClient.waitForKeetaNet();
       
+      // Get KeetaNet from global scope (works in both window and service worker)
+      const globalScope = (typeof window !== 'undefined') ? window : self;
+      const KeetaNet = globalScope.KeetaNet;
+      
       // Check if KeetaNet SDK is available (matches original KSwap pattern)
-      if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
+      if (!KeetaNet || !KeetaNet.lib || !KeetaNet.lib.Account) {
         throw new Error('KeetaNet SDK not properly loaded. Falling back to demo mode.');
       }
 
       // Generate or use provided seed (exactly like original KSwap)
-      const seedString = seed || window.KeetaNet.lib.Account.generateRandomSeed({ asString: true });
+      const seedString = seed || KeetaNet.lib.Account.generateRandomSeed({ asString: true });
       console.log('🔑 [WALLET] Seed ready (length:', seedString.length, ')');
       
       // Create account from seed (exactly like original KSwap)
-      const signer = window.KeetaNet.lib.Account.fromSeed(seedString, 0);
+      const signer = KeetaNet.lib.Account.fromSeed(seedString, 0);
       console.log('✅ [WALLET] Account created:', signer.publicKeyString);
       
       // Connect to network (exactly like original KSwap)
       const keetaNetworkName = networkName === 'mainnet' ? 'main' : 'test';
-      const client = window.KeetaNet.UserClient.fromNetwork(keetaNetworkName, signer);
+      const client = KeetaNet.UserClient.fromNetwork(keetaNetworkName, signer);
       
       // Get network config
       const network = {
@@ -63,13 +67,27 @@ class KeetaWalletClient {
    */
   static async waitForKeetaNet() {
     return new Promise((resolve, reject) => {
+      // Get global scope (window in popup, self in service worker)
+      const globalScope = (typeof window !== 'undefined') ? window : self;
+      
       // If already loaded, resolve immediately
-      if (window.KeetaNet && window.KeetaNet.lib) {
+      if (globalScope.KeetaNet && globalScope.KeetaNet.lib) {
         resolve();
         return;
       }
       
-      // Wait for SDK to load
+      // In service worker context, SDK should already be loaded synchronously
+      if (typeof window === 'undefined') {
+        // We're in a service worker, SDK should be loaded via importScripts
+        if (self.KeetaNet) {
+          resolve();
+        } else {
+          reject(new Error('KeetaNet SDK not loaded in service worker'));
+        }
+        return;
+      }
+      
+      // In popup context, wait for SDK to load via events
       const timeout = setTimeout(() => {
         reject(new Error('KeetaNet SDK load timeout'));
       }, 10000); // 10 second timeout
@@ -404,9 +422,13 @@ class KeetaWalletClient {
 // Make available globally
 if (typeof window !== 'undefined') {
   window.KeetaWalletClient = KeetaWalletClient;
+} else if (typeof self !== 'undefined') {
+  // Service worker context
+  self.KeetaWalletClient = KeetaWalletClient;
 }
 
 // Also export for modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { KeetaWalletClient };
 }
+

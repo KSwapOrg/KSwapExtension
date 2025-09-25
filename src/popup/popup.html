@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keeta Wallet</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <div class="wallet-container">
+      <!-- Header -->
+      <header class="wallet-header">
+        <div class="logo">
+          <img src="../icons/icon32.png" alt="Keeta" class="logo-icon">
+          <h1>Keeta Wallet</h1>
+        </div>
+        <div class="network-selector">
+          <select id="networkSelect">
+            <option value="testnet">Testnet</option>
+            <option value="mainnet">Mainnet</option>
+          </select>
+        </div>
+      </header>
+
+      <!-- Connection Status -->
+      <div id="connectionStatus" class="connection-status">
+        <div class="status-indicator"></div>
+        <span id="statusText">Connecting...</span>
+      </div>
+
+      <!-- Wallet Content -->
+      <div id="walletContent" class="wallet-content hidden">
+        <!-- Account Info -->
+        <div class="account-section">
+          <div class="account-address">
+            <label>Address:</label>
+            <div id="walletAddress" class="address-display"></div>
+            <button id="copyAddress" class="copy-btn">Copy</button>
+          </div>
+        </div>
+
+        <!-- Balance Section -->
+        <div class="balance-section">
+          <h2>Balances</h2>
+          <div id="tokenList" class="token-list">
+            <!-- Token balances will be populated here -->
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-section">
+          <button id="sendBtn" class="action-btn primary">Send</button>
+          <button id="receiveBtn" class="action-btn secondary">Receive</button>
+          <button id="settingsBtn" class="action-btn secondary">Settings</button>
+        </div>
+      </div>
+
+      <!-- Send Modal -->
+      <div id="sendModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Send Tokens</h3>
+            <button id="closeSend" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="sendToken">Token:</label>
+              <select id="sendToken">
+                <!-- Options populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sendTo">To Address:</label>
+              <input type="text" id="sendTo" placeholder="keeta_...">
+            </div>
+            <div class="form-group">
+              <label for="sendAmount">Amount:</label>
+              <input type="number" id="sendAmount" placeholder="0.0" step="0.000000001">
+            </div>
+            <div class="form-actions">
+              <button id="confirmSend" class="action-btn primary">Send</button>
+              <button id="cancelSend" class="action-btn secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Modal -->
+      <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Settings</h3>
+            <button id="closeSettings" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="setting-group">
+              <h4>Backup Seed</h4>
+              <p class="warning">⚠️ Keep your seed phrase safe and private!</p>
+              <button id="showSeed" class="action-btn secondary">Show Seed Phrase</button>
+            </div>
+            <div class="setting-group">
+              <h4>Network</h4>
+              <p>Current: <span id="currentNetwork"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p id="loadingText">Processing...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

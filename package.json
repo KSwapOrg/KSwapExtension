@@ -1,0 +1,40 @@
+{
+  "name": "keeta-wallet-extension",
+  "version": "1.0.0",
+  "description": "A secure Chrome extension wallet for the Keeta Network",
+  "main": "manifest.json",
+  "scripts": {
+    "build": "npm run build:popup && npm run build:background && npm run build:content",
+    "build:popup": "echo 'Building popup...' && npm run copy-libs",
+    "build:background": "echo 'Building background...' && npm run copy-libs",
+    "build:content": "echo 'Building content scripts...'",
+    "copy-libs": "cp -r ../KSwap/node_modules/@keetanetwork ./node_modules/",
+    "dev": "npm run build && echo 'Load the extension from Chrome Extensions page'",
+    "package": "zip -r keeta-wallet-extension.zip . -x node_modules/\\* .git/\\* \\*.log",
+    "lint": "echo 'Linting...'",
+    "test": "echo 'Testing...'"
+  },
+  "keywords": [
+    "keeta",
+    "wallet",
+    "chrome-extension",
+    "blockchain",
+    "defi"
+  ],
+  "author": "KSwap Organization",
+  "license": "MIT",
+  "dependencies": {
+    "@keetanetwork/keetanet-client": "latest"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.246"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KSwapOrg/KSwapExtension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KSwapOrg/KSwapExtension/issues"
+  },
+  "homepage": "https://github.com/KSwapOrg/KSwapExtension#readme"
+}

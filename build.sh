@@ -23,8 +23,9 @@ cp icons/KSwapLogo.png build/icons/icon128.png
 # Copy dependencies (if available)
 if [ -d "node_modules" ]; then
     echo "📦 Copying dependencies..."
-    mkdir -p build/node_modules
-    cp -r node_modules/@keetanetwork build/node_modules/ 2>/dev/null || echo "⚠️  Keeta SDK not found - run 'npm install' first"
+    mkdir -p build/node_modules/@keetanetwork/keetanet-client/client
+    cp node_modules/@keetanetwork/keetanet-client/client/index-browser.js build/node_modules/@keetanetwork/keetanet-client/client/ 2>/dev/null || echo "⚠️  Keeta SDK not found - run 'npm install' first"
+    echo "✅ KeetaNet browser SDK copied"
 fi
 
 echo "✅ Build complete!"

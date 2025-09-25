@@ -21,22 +21,25 @@ class KeetaWalletClient {
     }
 
     try {
-      // Check if KeetaNet SDK is available
-      if (typeof KeetaNetSDK === 'undefined') {
-        throw new Error('KeetaNet SDK not loaded. Falling back to demo mode.');
+      // Wait for KeetaNet SDK to load
+      await KeetaWalletClient.waitForKeetaNet();
+      
+      // Check if KeetaNet SDK is available (matches original KSwap pattern)
+      if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
+        throw new Error('KeetaNet SDK not properly loaded. Falling back to demo mode.');
       }
 
-      // Generate or use provided seed
-      const seedString = seed || KeetaNetSDK.lib.Account.generateRandomSeed({ asString: true });
+      // Generate or use provided seed (exactly like original KSwap)
+      const seedString = seed || window.KeetaNet.lib.Account.generateRandomSeed({ asString: true });
       console.log('🔑 [WALLET] Seed ready (length:', seedString.length, ')');
       
-      // Create account from seed
-      const signer = KeetaNetSDK.lib.Account.fromSeed(seedString, 0);
+      // Create account from seed (exactly like original KSwap)
+      const signer = window.KeetaNet.lib.Account.fromSeed(seedString, 0);
       console.log('✅ [WALLET] Account created:', signer.publicKeyString);
       
-      // Connect to network
+      // Connect to network (exactly like original KSwap)
       const keetaNetworkName = networkName === 'mainnet' ? 'main' : 'test';
-      const client = KeetaNetSDK.UserClient.fromNetwork(keetaNetworkName, signer);
+      const client = window.KeetaNet.UserClient.fromNetwork(keetaNetworkName, signer);
       
       // Get network config
       const network = {
@@ -53,6 +56,38 @@ class KeetaWalletClient {
       console.error('❌ [WALLET] Real network failed, falling back to demo:', error);
       return KeetaWalletClient.initializeDemo(networkName, seed);
     }
+  }
+
+  /**
+   * Wait for KeetaNet SDK to load
+   */
+  static async waitForKeetaNet() {
+    return new Promise((resolve, reject) => {
+      // If already loaded, resolve immediately
+      if (window.KeetaNet && window.KeetaNet.lib) {
+        resolve();
+        return;
+      }
+      
+      // Wait for SDK to load
+      const timeout = setTimeout(() => {
+        reject(new Error('KeetaNet SDK load timeout'));
+      }, 10000); // 10 second timeout
+      
+      window.addEventListener('keetanet-loaded', (event) => {
+        clearTimeout(timeout);
+        if (event.detail.available) {
+          resolve();
+        } else {
+          reject(new Error('KeetaNet SDK not available'));
+        }
+      }, { once: true });
+      
+      window.addEventListener('keetanet-error', (event) => {
+        clearTimeout(timeout);
+        reject(new Error(event.detail.error));
+      }, { once: true });
+    });
   }
 
   /**
@@ -147,7 +182,7 @@ class KeetaWalletClient {
         return await this.client.balance(this.client.baseToken);
       }
       
-      const tokenAccount = KeetaNetSDK.lib.Account.fromPublicKeyString(tokenId);
+      const tokenAccount = window.KeetaNet.lib.Account.fromPublicKeyString(tokenId);
       return await this.client.balance(tokenAccount);
     } catch (error) {
       console.log(`Token ${tokenId} not found or no balance:`, error);
@@ -171,12 +206,12 @@ class KeetaWalletClient {
     try {
       // Real network transaction
       const builder = this.client.initBuilder();
-      const recipientAccount = KeetaNetSDK.lib.Account.fromPublicKeyString(toAddress);
+      const recipientAccount = window.KeetaNet.lib.Account.fromPublicKeyString(toAddress);
       
       if (tokenId === 'KTA' || tokenId === this.client.baseToken) {
         builder.send(recipientAccount, amount);
       } else {
-        const tokenAccount = KeetaNetSDK.lib.Account.fromPublicKeyString(tokenId);
+        const tokenAccount = window.KeetaNet.lib.Account.fromPublicKeyString(tokenId);
         builder.send(recipientAccount, amount, tokenAccount);
       }
       
@@ -284,7 +319,7 @@ class KeetaWalletClient {
     }
 
     try {
-      const tokenAccount = KeetaNetSDK.lib.Account.fromPublicKeyString(tokenId);
+      const tokenAccount = window.KeetaNet.lib.Account.fromPublicKeyString(tokenId);
       const info = await this.client.info(tokenAccount);
       if (!info) return null;
 

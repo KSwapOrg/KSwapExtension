@@ -116,9 +116,12 @@ class WalletPopup {
       
       // Get stored seed and preferences
       const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork', 'selectedMode']);
-      const seed = result.walletSeed;
+      let seed = result.walletSeed;
       this.currentNetwork = result.selectedNetwork || 'testnet';
       this.currentMode = result.selectedMode || 'demo';
+      
+      // Debug: Check stored seed format
+      console.log('🔍 [POPUP] Stored seed:', seed ? `length=${seed.length}, starts="${seed.substring(0, 10)}..."` : 'null');
       
       // Update mode selector
       this.modeSelect.value = this.currentMode;

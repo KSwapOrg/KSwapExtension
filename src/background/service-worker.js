@@ -27,53 +27,58 @@
       console.error('❌ [BACKGROUND] Demo wallet client not attached to self!');
     }
     
-    // Step 2: Try to load real SDK if demo worked
-    if (self.KeetaWalletClient) {
-      try {
-        console.log('📦 [BACKGROUND] Attempting to load KeetaNet SDK...');
-        
-        // Create window shim
-        if (!self.window) {
-          self.window = {
-            crypto: self.crypto,
-            location: { href: 'chrome-extension://' + chrome.runtime.id },
-            navigator: self.navigator || {},
-            document: { createElement: () => ({}) },
-            setTimeout: self.setTimeout.bind(self),
-            clearTimeout: self.clearTimeout.bind(self),
-            console: self.console,
-            fetch: self.fetch.bind(self)
-          };
-        }
-        
-        // Create CommonJS shim
-        self.module = { exports: {} };
-        self.exports = self.module.exports;
-        self.require = function(id) {
-          if (id === 'buffer') return { Buffer: self.Buffer };
-          if (id === 'crypto') return self.crypto;
-          return {};
+    // Step 2: Try to load KeetaNet SDK first, then decide which client to use
+    try {
+      console.log('📦 [BACKGROUND] Attempting to load KeetaNet SDK...');
+      
+      // Create window shim
+      if (!self.window) {
+        self.window = {
+          crypto: self.crypto,
+          location: { href: 'chrome-extension://' + chrome.runtime.id },
+          navigator: self.navigator || {},
+          document: { createElement: () => ({}) },
+          setTimeout: self.setTimeout.bind(self),
+          clearTimeout: self.clearTimeout.bind(self),
+          console: self.console,
+          fetch: self.fetch.bind(self)
         };
-        
-        importScripts('../lib/keetanet-browser.js');
-        
-        self.KeetaNet = self.module.exports;
-        self.window.KeetaNet = self.KeetaNet;
-        
-        // Clean up
-        delete self.module;
-        delete self.exports;
-        delete self.require;
-        
-        console.log('✅ [BACKGROUND] KeetaNet SDK loaded successfully');
-        
-        // Load real wallet client (overwrites demo)
-        importScripts('../lib/wallet-client-real.js');
-        console.log('✅ [BACKGROUND] Real wallet client loaded successfully');
-        
-      } catch (sdkError) {
-        console.warn('⚠️ [BACKGROUND] SDK failed, keeping demo client:', sdkError.message);
       }
+      
+      // Create CommonJS shim
+      self.module = { exports: {} };
+      self.exports = self.module.exports;
+      self.require = function(id) {
+        if (id === 'buffer') return { Buffer: self.Buffer };
+        if (id === 'crypto') return self.crypto;
+        return {};
+      };
+      
+      importScripts('../lib/keetanet-browser.js');
+      
+      self.KeetaNet = self.module.exports;
+      self.window.KeetaNet = self.KeetaNet;
+      
+      // Clean up
+      delete self.module;
+      delete self.exports;
+      delete self.require;
+      
+      console.log('✅ [BACKGROUND] KeetaNet SDK loaded successfully');
+      console.log('🔍 [BACKGROUND] SDK has lib.Account.generateRandomSeed?', !!self.KeetaNet?.lib?.Account?.generateRandomSeed);
+      
+      // Now replace demo client with real client
+      console.log('📦 [BACKGROUND] Replacing demo client with real client...');
+      
+      // Clear the existing KeetaWalletClient
+      delete self.KeetaWalletClient;
+      
+      // Load real wallet client 
+      importScripts('../lib/wallet-client-real.js');
+      console.log('✅ [BACKGROUND] Real wallet client loaded successfully');
+      
+    } catch (sdkError) {
+      console.warn('⚠️ [BACKGROUND] SDK failed, keeping demo client:', sdkError.message);
     }
     
   } catch (error) {

@@ -825,29 +825,127 @@ body {
   color: var(--text-muted);
 }
 
-/* Create Wallet Steps */
-.create-steps .step {
+/* Streamlined Create Wallet */
+.create-content {
   padding: 20px;
 }
 
-.create-steps .step.hidden {
-  display: none;
+.info-section h4 {
+  color: var(--text-primary);
+  font-size: 18px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
-.create-steps .step h4 {
+.info-section > p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.create-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.option-card {
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.option-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+}
+
+.option-card h5 {
   color: var(--text-primary);
   font-size: 16px;
   margin-bottom: 8px;
 }
 
-.create-steps .step p {
+.option-card p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.option-divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  position: relative;
+}
+
+.option-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+  z-index: 1;
+}
+
+.option-divider::after {
+  content: attr(data-content);
+  background: var(--bg-primary);
+  padding: 0 16px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Advanced Flow (Optional) */
+.advanced-flow {
+  padding: 20px;
+}
+
+.advanced-step {
+  padding: 16px 0;
+}
+
+.advanced-step.hidden {
+  display: none;
+}
+
+.advanced-step h4 {
+  color: var(--text-primary);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.advanced-step p {
   color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 20px;
 }
 
-.step-actions {
-  margin-top: 24px;
+.advanced-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.info-box {
+  background: rgba(79, 70, 229, 0.1);
+  border: 1px solid rgba(79, 70, 229, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.info-box p {
+  color: var(--primary-color);
+  font-size: 12px;
+  margin: 0;
 }
 
 /* Phrase Verification */

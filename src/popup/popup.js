@@ -55,10 +55,13 @@ class WalletPopup {
     this.phraseStatus = document.getElementById('phraseStatus');
     this.phraseWordCount = document.getElementById('phraseWordCount');
     
-    // Create wallet elements
-    this.generatePhraseBtn = document.getElementById('generatePhrase');
-    this.confirmPhraseWrittenBtn = document.getElementById('confirmPhraseWritten');
-    this.confirmWalletCreationBtn = document.getElementById('confirmWalletCreation');
+    // Create wallet elements (streamlined)
+    this.quickCreateWalletBtn = document.getElementById('quickCreateWallet');
+    this.advancedCreateWalletBtn = document.getElementById('advancedCreateWallet');
+    this.importExistingWalletBtn = document.getElementById('importExistingWallet');
+    this.generateAdvancedPhraseBtn = document.getElementById('generateAdvancedPhrase');
+    this.finishAdvancedSetupBtn = document.getElementById('finishAdvancedSetup');
+    this.backToQuickBtn = document.getElementById('backToQuick');
     
     // Close buttons
     this.closeSeedPhraseBtn = document.getElementById('closeSeedPhrase');
@@ -73,11 +76,10 @@ class WalletPopup {
     // Debug: Check which elements are missing
     console.log('🔍 [POPUP] Element availability check:');
     console.log('- themeToggle:', !!this.themeToggle);
-    console.log('- themeSelect:', !!this.themeSelect);
+    console.log('- quickCreateWalletBtn:', !!this.quickCreateWalletBtn);
+    console.log('- advancedCreateWalletBtn:', !!this.advancedCreateWalletBtn);
+    console.log('- importExistingWalletBtn:', !!this.importExistingWalletBtn);
     console.log('- showSeedPhraseBtn:', !!this.showSeedPhraseBtn);
-    console.log('- importWalletBtn:', !!this.importWalletBtn);
-    console.log('- createNewWalletBtn:', !!this.createNewWalletBtn);
-    console.log('- showSeedBtn (legacy):', !!this.showSeedBtn);
     
     // Modals
     this.sendModal = document.getElementById('sendModal');
@@ -229,28 +231,47 @@ class WalletPopup {
       });
     }
     
-    // V2 Create Wallet Modal (with null checks)
+    // V2 Create Wallet Modal (streamlined)
     if (this.closeCreateWalletBtn) {
       this.closeCreateWalletBtn.addEventListener('click', () => {
         this.closeCreateWalletModal();
       });
     }
     
-    if (this.generatePhraseBtn) {
-      this.generatePhraseBtn.addEventListener('click', () => {
-        this.generateNewSeedPhrase();
+    if (this.quickCreateWalletBtn) {
+      this.quickCreateWalletBtn.addEventListener('click', () => {
+        this.quickCreateWallet();
       });
     }
     
-    if (this.confirmPhraseWrittenBtn) {
-      this.confirmPhraseWrittenBtn.addEventListener('click', () => {
-        this.proceedToVerification();
+    if (this.advancedCreateWalletBtn) {
+      this.advancedCreateWalletBtn.addEventListener('click', () => {
+        this.showAdvancedFlow();
       });
     }
     
-    if (this.confirmWalletCreationBtn) {
-      this.confirmWalletCreationBtn.addEventListener('click', () => {
-        this.createWalletFromGeneratedPhrase();
+    if (this.importExistingWalletBtn) {
+      this.importExistingWalletBtn.addEventListener('click', () => {
+        this.closeCreateWalletModal();
+        this.openImportWalletModal();
+      });
+    }
+    
+    if (this.generateAdvancedPhraseBtn) {
+      this.generateAdvancedPhraseBtn.addEventListener('click', () => {
+        this.generateAdvancedSeedPhrase();
+      });
+    }
+    
+    if (this.finishAdvancedSetupBtn) {
+      this.finishAdvancedSetupBtn.addEventListener('click', () => {
+        this.finishAdvancedSetup();
+      });
+    }
+    
+    if (this.backToQuickBtn) {
+      this.backToQuickBtn.addEventListener('click', () => {
+        this.quickCreateWallet();
       });
     }
     
@@ -907,20 +928,83 @@ class WalletPopup {
     }
   }
 
-  // Create New Wallet Flow
+  // Streamlined Create Wallet Flow
   openCreateWalletModal() {
     this.createWalletModal.classList.remove('hidden');
-    this.showCreateStep(1);
+    this.showInfoSection();
   }
 
   closeCreateWalletModal() {
     this.createWalletModal.classList.add('hidden');
+    this.showInfoSection();
     this.generatedSeedPhrase = null;
   }
 
-  showCreateStep(stepNumber) {
-    // Hide all steps
-    document.querySelectorAll('.step').forEach(step => {
+  showInfoSection() {
+    // Show main options, hide advanced flow
+    document.querySelector('.info-section').classList.remove('hidden');
+    document.getElementById('advancedFlow').classList.add('hidden');
+  }
+
+  // Quick wallet creation (no forced verification)
+  async quickCreateWallet() {
+    try {
+      this.showLoading('Creating wallet...');
+      
+      console.log('⚡ [CREATE] Quick wallet creation using Keeta SDK...');
+      
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
+      
+      // Generate wallet directly (KeetaWalletClient handles SDK seed generation)
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, null, this.currentMode);
+      
+      // Store the wallet data
+      await chrome.storage.local.set({
+        walletSeed: this.wallet.getSeed(),
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode,
+        isImported: false,
+        hasBackedUpSeed: false // User can backup later
+      });
+      
+      // Update UI
+      await this.updateWalletDisplay();
+      this.closeCreateWalletModal();
+      this.hideLoading();
+      
+      console.log('✅ [CREATE] Quick wallet created successfully');
+      
+      // Optional: Show backup reminder (non-intrusive)
+      setTimeout(() => {
+        this.showBackupReminder();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to create wallet:', error);
+      this.hideLoading();
+      alert('Failed to create wallet: ' + error.message);
+    }
+  }
+
+  showBackupReminder() {
+    // Optional, non-intrusive backup reminder
+    if (confirm('💡 Wallet created! Would you like to backup your recovery phrase now? (You can do this later in Settings)')) {
+      this.openSeedPhraseModal();
+    }
+  }
+
+  // Advanced flow (optional)
+  showAdvancedFlow() {
+    document.querySelector('.info-section').classList.add('hidden');
+    document.getElementById('advancedFlow').classList.remove('hidden');
+    this.showAdvancedStep(1);
+  }
+
+  showAdvancedStep(stepNumber) {
+    // Hide all advanced steps
+    document.querySelectorAll('.advanced-step').forEach(step => {
       step.classList.add('hidden');
       step.classList.remove('active');
     });
@@ -933,11 +1017,11 @@ class WalletPopup {
     }
   }
 
-  async generateNewSeedPhrase() {
+  async generateAdvancedSeedPhrase() {
     try {
       this.showLoading('Generating secure seed phrase...');
       
-      console.log('🌱 [CREATE] Generating new mnemonic using Keeta SDK...');
+      console.log('🔐 [CREATE] Advanced: Generating mnemonic using Keeta SDK...');
       
       if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
         throw new Error('KeetaNet SDK not available');
@@ -945,150 +1029,27 @@ class WalletPopup {
       
       // Generate new random seed using Keeta SDK
       const seed = window.KeetaNet.lib.Account.generateRandomSeed({ asString: true });
-      console.log('🌱 [CREATE] Generated seed (length:', seed.length, ')');
+      console.log('🔐 [CREATE] Generated seed (length:', seed.length, ')');
       
-      // Convert seed to mnemonic for display (simplified for demo)
+      // Convert seed to mnemonic for display
       this.generatedSeedPhrase = await this.generateMnemonicFromSeed(seed);
       this.generatedSeed = seed;
       
       // Display the phrase
-      const newSeedDisplay = document.getElementById('newSeedPhraseDisplay');
-      this.displaySeedPhraseInElement(this.generatedSeedPhrase, newSeedDisplay);
+      const advancedSeedDisplay = document.getElementById('advancedSeedPhraseDisplay');
+      this.displaySeedPhraseInElement(this.generatedSeedPhrase, advancedSeedDisplay);
       
       this.hideLoading();
-      this.showCreateStep(2);
+      this.showAdvancedStep(2);
       
     } catch (error) {
-      console.error('Failed to generate seed phrase:', error);
+      console.error('Failed to generate advanced seed phrase:', error);
       this.hideLoading();
       alert('Failed to generate seed phrase: ' + error.message);
     }
   }
 
-  displaySeedPhraseInElement(seedWords, container) {
-    const grid = document.createElement('div');
-    grid.className = 'seed-phrase-grid';
-    
-    seedWords.forEach((word, index) => {
-      const wordElement = document.createElement('div');
-      wordElement.className = 'seed-word';
-      wordElement.textContent = word;
-      wordElement.setAttribute('data-index', index + 1);
-      grid.appendChild(wordElement);
-    });
-    
-    container.innerHTML = '';
-    container.appendChild(grid);
-  }
-
-  proceedToVerification() {
-    if (!this.generatedSeedPhrase) {
-      alert('No seed phrase generated');
-      return;
-    }
-    
-    this.setupSeedVerification();
-    this.showCreateStep(3);
-  }
-
-  setupSeedVerification() {
-    const verificationContainer = document.getElementById('phraseVerification');
-    
-    // Create verification grid
-    const verificationGrid = document.createElement('div');
-    verificationGrid.className = 'verification-grid';
-    
-    // Create slots for 3 random words
-    const randomIndices = this.getRandomIndices(3, this.generatedSeedPhrase.length);
-    this.verificationIndices = randomIndices;
-    this.verificationAnswers = [];
-    
-    randomIndices.forEach((index, slotIndex) => {
-      const slot = document.createElement('div');
-      slot.className = 'verification-slot';
-      slot.setAttribute('data-index', index);
-      slot.setAttribute('data-slot', slotIndex);
-      slot.textContent = `Word #${index + 1}`;
-      verificationGrid.appendChild(slot);
-    });
-    
-    // Create shuffled word options
-    const wordsContainer = document.createElement('div');
-    wordsContainer.className = 'verification-words';
-    
-    const correctWords = randomIndices.map(i => this.generatedSeedPhrase[i]);
-    const wrongWords = this.generateWrongWords(6);
-    const allWords = [...correctWords, ...wrongWords].sort(() => Math.random() - 0.5);
-    
-    allWords.forEach(word => {
-      const wordBtn = document.createElement('button');
-      wordBtn.className = 'verification-word';
-      wordBtn.textContent = word;
-      wordBtn.addEventListener('click', () => this.selectVerificationWord(wordBtn));
-      wordsContainer.appendChild(wordBtn);
-    });
-    
-    verificationContainer.innerHTML = '';
-    verificationContainer.appendChild(verificationGrid);
-    verificationContainer.appendChild(wordsContainer);
-  }
-
-  getRandomIndices(count, max) {
-    const indices = [];
-    while (indices.length < count) {
-      const random = Math.floor(Math.random() * max);
-      if (!indices.includes(random)) {
-        indices.push(random);
-      }
-    }
-    return indices.sort((a, b) => a - b);
-  }
-
-  generateWrongWords(count) {
-    const wrongWords = [
-      'abandon', 'ability', 'about', 'above', 'abuse', 'access', 'accident', 'account',
-      'accurate', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'action', 'actor'
-    ];
-    return wrongWords.slice(0, count);
-  }
-
-  selectVerificationWord(wordBtn) {
-    if (wordBtn.classList.contains('used')) return;
-    
-    // Find empty verification slot
-    const emptySlot = document.querySelector('.verification-slot:not(.filled)');
-    if (!emptySlot) return;
-    
-    // Fill the slot
-    emptySlot.textContent = wordBtn.textContent;
-    emptySlot.classList.add('filled');
-    
-    // Mark word as used
-    wordBtn.classList.add('used');
-    
-    // Store answer
-    const slotIndex = parseInt(emptySlot.getAttribute('data-slot'));
-    const wordIndex = parseInt(emptySlot.getAttribute('data-index'));
-    this.verificationAnswers[slotIndex] = {
-      word: wordBtn.textContent,
-      expectedWord: this.generatedSeedPhrase[wordIndex],
-      correct: wordBtn.textContent === this.generatedSeedPhrase[wordIndex]
-    };
-    
-    // Check if verification is complete
-    if (this.verificationAnswers.length === this.verificationIndices.length) {
-      const allCorrect = this.verificationAnswers.every(answer => answer.correct);
-      this.confirmWalletCreationBtn.disabled = !allCorrect;
-      
-      if (allCorrect) {
-        this.confirmWalletCreationBtn.textContent = '✅ Create Wallet';
-      } else {
-        this.confirmWalletCreationBtn.textContent = '❌ Incorrect Words';
-      }
-    }
-  }
-
-  async createWalletFromGeneratedPhrase() {
+  async finishAdvancedSetup() {
     try {
       if (!this.generatedSeed) {
         throw new Error('No generated seed available');
@@ -1109,7 +1070,7 @@ class WalletPopup {
         selectedNetwork: this.currentNetwork,
         selectedMode: this.currentMode,
         isImported: false,
-        hasBackedUpSeed: true
+        hasBackedUpSeed: true // Advanced users saw their phrase
       });
       
       // Update UI
@@ -1117,14 +1078,32 @@ class WalletPopup {
       this.closeCreateWalletModal();
       this.hideLoading();
       
-      alert('New wallet created successfully!');
+      console.log('✅ [CREATE] Advanced wallet created successfully');
       
     } catch (error) {
-      console.error('Failed to create wallet:', error);
+      console.error('Failed to finish advanced setup:', error);
       this.hideLoading();
       alert('Failed to create wallet: ' + error.message);
     }
   }
+
+  displaySeedPhraseInElement(seedWords, container) {
+    const grid = document.createElement('div');
+    grid.className = 'seed-phrase-grid';
+    
+    seedWords.forEach((word, index) => {
+      const wordElement = document.createElement('div');
+      wordElement.className = 'seed-word';
+      wordElement.textContent = word;
+      wordElement.setAttribute('data-index', index + 1);
+      grid.appendChild(wordElement);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(grid);
+  }
+
+  // Remove old complex verification methods (streamlined approach)
 
   // Account Management (HD Wallets)
   async addNewAccount() {
@@ -1215,9 +1194,48 @@ class WalletPopup {
     }
   }
 
-  showFirstTimeSetup() {
-    // Show create wallet modal as onboarding
-    this.openCreateWalletModal();
+  async showFirstTimeSetup() {
+    // Streamlined first-time setup - create wallet directly
+    try {
+      console.log('🚀 [SETUP] First-time setup - creating wallet automatically...');
+      
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
+      
+      // Auto-create wallet like original version
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, null, this.currentMode);
+      
+      // Store the wallet data
+      await chrome.storage.local.set({
+        walletSeed: this.wallet.getSeed(),
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode,
+        isImported: false,
+        hasBackedUpSeed: false // User can backup later
+      });
+      
+      // Update UI
+      await this.updateWalletDisplay();
+      this.updateStatus('connected', 'Wallet created');
+      this.updateModeIndicator();
+      
+      console.log('✅ [SETUP] First-time wallet created successfully');
+      
+      // Show optional backup reminder after 3 seconds (non-blocking)
+      setTimeout(() => {
+        if (confirm('💡 Wallet created! Would you like to backup your recovery phrase? (Recommended but optional)')) {
+          this.openSeedPhraseModal();
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Failed first-time setup:', error);
+      this.updateStatus('error', 'Setup failed');
+      
+      // Fallback: Show create wallet modal if auto-setup fails
+      this.openCreateWalletModal();
+    }
   }
 }
 

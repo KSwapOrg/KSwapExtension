@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KSwap Wallet Extension</title>
   <link rel="stylesheet" href="popup.css">
-  </head>
-  <body>
+</head>
+<body>
     <!-- Load KeetaNet SDK with proper CommonJS setup -->
     <script src="../lib/keeta-sdk-setup.js"></script>
     <!-- Load wallet client -->
@@ -23,12 +23,12 @@
           <button id="themeToggle" class="theme-toggle" title="Toggle theme">
             <span class="theme-icon">🌙</span>
           </button>
-          <div class="network-selector">
+        <div class="network-selector">
             <select id="modeSelect">
               <option value="demo">Demo Mode</option>
               <option value="testnet">Testnet (Real)</option>
               <option value="mainnet">Mainnet (Real)</option>
-            </select>
+          </select>
           </div>
         </div>
         <span id="modeIndicator" class="mode-indicator">Demo</span>
@@ -279,42 +279,68 @@
             <button id="closeCreateWallet" class="close-btn">&times;</button>
           </div>
           <div class="modal-body">
-            <div class="create-steps">
-              <div class="step active" data-step="1">
-                <h4>Step 1: Generate Recovery Phrase</h4>
-                <p>We'll generate a 12-word recovery phrase for you.</p>
-                <div class="step-actions">
-                  <button id="generatePhrase" class="action-btn primary full-width">
+            <div class="create-content">
+              <div class="info-section">
+                <h4>🚀 Ready to create your wallet?</h4>
+                <p>We'll generate a secure wallet for you instantly. You can backup your recovery phrase later in Settings.</p>
+                
+                <div class="create-options">
+                  <div class="option-card">
+                    <h5>🎯 Quick Setup</h5>
+                    <p>Create wallet now, backup later</p>
+                    <button id="quickCreateWallet" class="action-btn primary full-width">
+                      Create Wallet Now
+                    </button>
+                  </div>
+                  
+                  <div class="option-divider">OR</div>
+                  
+                  <div class="option-card">
+                    <h5>🔐 Advanced Setup</h5>
+                    <p>Generate and verify recovery phrase</p>
+                    <button id="advancedCreateWallet" class="action-btn secondary full-width">
+                      Advanced Setup
+                    </button>
+                  </div>
+                  
+                  <div class="option-divider">OR</div>
+                  
+                  <div class="option-card">
+                    <h5>📥 Import Existing</h5>
+                    <p>Import from recovery phrase</p>
+                    <button id="importExistingWallet" class="action-btn secondary full-width">
+                      Import Wallet
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Advanced creation flow (hidden by default) -->
+              <div id="advancedFlow" class="advanced-flow hidden">
+                <div class="advanced-step active" data-step="1">
+                  <h4>Generate Recovery Phrase</h4>
+                  <p>We'll generate a 12-word recovery phrase for you.</p>
+                  <button id="generateAdvancedPhrase" class="action-btn primary full-width">
                     Generate Recovery Phrase
                   </button>
                 </div>
-              </div>
-              
-              <div class="step hidden" data-step="2">
-                <h4>Step 2: Write Down Your Recovery Phrase</h4>
-                <div class="warning-box">
-                  <p>⚠️ Write these words down in order and keep them safe!</p>
-                </div>
-                <div id="newSeedPhraseDisplay" class="seed-phrase-display">
-                  <!-- Generated phrase will appear here -->
-                </div>
-                <div class="step-actions">
-                  <button id="confirmPhraseWritten" class="action-btn primary full-width">
-                    I've Written It Down
-                  </button>
-                </div>
-              </div>
-              
-              <div class="step hidden" data-step="3">
-                <h4>Step 3: Verify Recovery Phrase</h4>
-                <p>Select the words in the correct order to verify you wrote them down:</p>
-                <div id="phraseVerification" class="phrase-verification">
-                  <!-- Verification interface will appear here -->
-                </div>
-                <div class="step-actions">
-                  <button id="confirmWalletCreation" class="action-btn primary full-width" disabled>
-                    Create Wallet
-                  </button>
+                
+                <div class="advanced-step hidden" data-step="2">
+                  <h4>Your Recovery Phrase</h4>
+                  <div class="info-box">
+                    <p>💡 Save these words in a secure location. You can always view them later in Settings.</p>
+                  </div>
+                  <div id="advancedSeedPhraseDisplay" class="seed-phrase-display">
+                    <!-- Generated phrase will appear here -->
+                  </div>
+                  <div class="advanced-actions">
+                    <button id="finishAdvancedSetup" class="action-btn primary full-width">
+                      Finish Setup
+                    </button>
+                    <button id="backToQuick" class="action-btn secondary full-width">
+                      Skip & Create Quick Wallet
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

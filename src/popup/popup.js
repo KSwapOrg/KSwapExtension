@@ -3,13 +3,15 @@ class WalletPopup {
   constructor() {
     this.wallet = null;
     this.currentNetwork = 'testnet';
-    this.currentMode = 'demo';
+    this.currentMode = 'testnet'; // Default to real testnet, not demo
+    this.currentWalletId = 'default';
+    this.wallets = new Map(); // Store multiple wallets
     this.tokens = [];
     
     console.log('🚀 [POPUP] Initializing WalletPopup v2...');
     this.initializeElements();
     this.attachEventListeners();
-    this.loadWallet();
+    this.loadWallets();
   }
 
   initializeElements() {
@@ -26,6 +28,10 @@ class WalletPopup {
     this.modeSelect = document.getElementById('modeSelect');
     this.modeIndicator = document.getElementById('modeIndicator');
     this.copyAddressBtn = document.getElementById('copyAddress');
+    
+    // Multi-wallet elements
+    this.walletSelect = document.getElementById('walletSelect');
+    this.addWalletBtn = document.getElementById('addWalletBtn');
     
     // V2 Theme elements
     this.themeToggle = document.getElementById('themeToggle');
@@ -51,9 +57,14 @@ class WalletPopup {
     
     // Import elements
     this.seedPhraseInput = document.getElementById('seedPhraseInput');
-    this.confirmImportBtn = document.getElementById('confirmImport');
+    this.rawSeedInput = document.getElementById('rawSeedInput');
+    this.confirmPhraseImportBtn = document.getElementById('confirmPhraseImport');
+    this.confirmSeedImportBtn = document.getElementById('confirmSeedImport');
+    this.importFundedWalletBtn = document.getElementById('importFundedWallet');
     this.phraseStatus = document.getElementById('phraseStatus');
     this.phraseWordCount = document.getElementById('phraseWordCount');
+    this.seedStatus = document.getElementById('seedStatus');
+    this.seedLength = document.getElementById('seedLength');
     
     // Create wallet elements (streamlined)
     this.quickCreateWalletBtn = document.getElementById('quickCreateWallet');
@@ -105,6 +116,19 @@ class WalletPopup {
     this.modeSelect.addEventListener('change', (e) => {
       this.switchMode(e.target.value);
     });
+    
+    // Multi-wallet selection
+    if (this.walletSelect) {
+      this.walletSelect.addEventListener('change', (e) => {
+        this.switchWallet(e.target.value);
+      });
+    }
+    
+    if (this.addWalletBtn) {
+      this.addWalletBtn.addEventListener('click', () => {
+        this.openCreateWalletModal();
+      });
+    }
     
     // Copy address
     this.copyAddressBtn.addEventListener('click', () => {
@@ -219,15 +243,40 @@ class WalletPopup {
       });
     }
     
+    // Import method switching
+    document.querySelectorAll('.import-method').forEach(method => {
+      method.addEventListener('click', () => {
+        this.switchImportMethod(method.getAttribute('data-method'));
+      });
+    });
+    
     if (this.seedPhraseInput) {
       this.seedPhraseInput.addEventListener('input', () => {
         this.validateSeedPhrase();
       });
     }
     
-    if (this.confirmImportBtn) {
-      this.confirmImportBtn.addEventListener('click', () => {
+    if (this.rawSeedInput) {
+      this.rawSeedInput.addEventListener('input', () => {
+        this.validateRawSeed();
+      });
+    }
+    
+    if (this.confirmPhraseImportBtn) {
+      this.confirmPhraseImportBtn.addEventListener('click', () => {
         this.importWalletFromSeedPhrase();
+      });
+    }
+    
+    if (this.confirmSeedImportBtn) {
+      this.confirmSeedImportBtn.addEventListener('click', () => {
+        this.importWalletFromRawSeed();
+      });
+    }
+    
+    if (this.importFundedWalletBtn) {
+      this.importFundedWalletBtn.addEventListener('click', () => {
+        this.importFundedWallet();
       });
     }
     
@@ -845,16 +894,36 @@ class WalletPopup {
   // Import Wallet Functionality
   openImportWalletModal() {
     this.importWalletModal.classList.remove('hidden');
-    this.seedPhraseInput.value = '';
-    this.validateSeedPhrase();
+    this.switchImportMethod('phrase'); // Default to phrase import
   }
 
   closeImportWalletModal() {
     this.importWalletModal.classList.add('hidden');
-    this.seedPhraseInput.value = '';
+    if (this.seedPhraseInput) this.seedPhraseInput.value = '';
+    if (this.rawSeedInput) this.rawSeedInput.value = '';
+  }
+
+  switchImportMethod(method) {
+    // Update active import method
+    document.querySelectorAll('.import-method').forEach(m => {
+      m.classList.remove('active');
+    });
+    document.querySelector(`[data-method="${method}"]`).classList.add('active');
+    
+    // Show/hide appropriate import sections
+    document.getElementById('phraseImport').classList.toggle('hidden', method !== 'phrase');
+    document.getElementById('seedImport').classList.toggle('hidden', method !== 'seed');
+    
+    // Clear inputs and validation
+    if (this.seedPhraseInput) this.seedPhraseInput.value = '';
+    if (this.rawSeedInput) this.rawSeedInput.value = '';
+    this.validateSeedPhrase();
+    this.validateRawSeed();
   }
 
   validateSeedPhrase() {
+    if (!this.seedPhraseInput || !this.phraseWordCount || !this.phraseStatus) return;
+    
     const input = this.seedPhraseInput.value.trim();
     const words = input.split(/\s+/).filter(word => word.length > 0);
     
@@ -864,7 +933,7 @@ class WalletPopup {
     if (words.length === 0) {
       this.phraseStatus.textContent = '';
       this.phraseStatus.className = 'validation-status';
-      this.confirmImportBtn.disabled = true;
+      if (this.confirmPhraseImportBtn) this.confirmPhraseImportBtn.disabled = true;
       return;
     }
     
@@ -872,11 +941,44 @@ class WalletPopup {
     if (words.length === 12 || words.length === 24) {
       this.phraseStatus.textContent = '✅ Valid word count';
       this.phraseStatus.className = 'validation-status valid';
-      this.confirmImportBtn.disabled = false;
+      if (this.confirmPhraseImportBtn) this.confirmPhraseImportBtn.disabled = false;
     } else {
       this.phraseStatus.textContent = '❌ Must be 12 or 24 words';
       this.phraseStatus.className = 'validation-status invalid';
-      this.confirmImportBtn.disabled = true;
+      if (this.confirmPhraseImportBtn) this.confirmPhraseImportBtn.disabled = true;
+    }
+  }
+
+  validateRawSeed() {
+    if (!this.rawSeedInput || !this.seedLength || !this.seedStatus) return;
+    
+    const input = this.rawSeedInput.value.trim().toUpperCase();
+    
+    // Update character count
+    this.seedLength.textContent = `${input.length}/64 characters`;
+    
+    if (input.length === 0) {
+      this.seedStatus.textContent = '';
+      this.seedStatus.className = 'validation-status';
+      if (this.confirmSeedImportBtn) this.confirmSeedImportBtn.disabled = true;
+      return;
+    }
+    
+    // Validate hex format and length
+    const isValidHex = /^[0-9A-F]+$/.test(input);
+    
+    if (input.length === 64 && isValidHex) {
+      this.seedStatus.textContent = '✅ Valid hex seed';
+      this.seedStatus.className = 'validation-status valid';
+      if (this.confirmSeedImportBtn) this.confirmSeedImportBtn.disabled = false;
+    } else if (!isValidHex) {
+      this.seedStatus.textContent = '❌ Must be hexadecimal (0-9, A-F)';
+      this.seedStatus.className = 'validation-status invalid';
+      if (this.confirmSeedImportBtn) this.confirmSeedImportBtn.disabled = true;
+    } else {
+      this.seedStatus.textContent = `❌ Must be exactly 64 characters (${input.length}/64)`;
+      this.seedStatus.className = 'validation-status invalid';
+      if (this.confirmSeedImportBtn) this.confirmSeedImportBtn.disabled = true;
     }
   }
 
@@ -928,6 +1030,120 @@ class WalletPopup {
     }
   }
 
+  async importWalletFromRawSeed() {
+    try {
+      const rawSeed = this.rawSeedInput.value.trim().toUpperCase();
+      
+      if (rawSeed.length !== 64 || !/^[0-9A-F]+$/.test(rawSeed)) {
+        throw new Error('Invalid hex seed format');
+      }
+      
+      this.showLoading('Importing wallet from seed...');
+      
+      console.log('🔑 [IMPORT] Importing wallet from raw hex seed...');
+      console.log('🔑 [IMPORT] Seed length:', rawSeed.length);
+      
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
+      
+      // Initialize wallet directly with hex seed (no BIP39 conversion)
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, rawSeed, this.currentMode);
+      
+      console.log('🔑 [IMPORT] Wallet imported successfully, address:', this.wallet.getAddress());
+      
+      // Store the imported seed
+      await chrome.storage.local.set({
+        walletSeed: rawSeed,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode,
+        isImported: true,
+        importMethod: 'raw-seed'
+      });
+      
+      // Update UI
+      await this.updateWalletDisplay();
+      this.closeImportWalletModal();
+      this.hideLoading();
+      
+      alert('Wallet imported successfully from raw seed!');
+      
+    } catch (error) {
+      console.error('Failed to import wallet from raw seed:', error);
+      this.hideLoading();
+      alert('Failed to import wallet: ' + error.message);
+    }
+  }
+
+  async importFundedWallet() {
+    try {
+      // Your specific funded wallet seed (from console output)
+      const fundedWalletSeed = "512FE49DC49C486057E4AE1AC8AA6F75214C0ED010581B2E15A951F208240C22";
+      
+      this.showLoading('Importing your funded wallet...');
+      
+      console.log('💰 [IMPORT] Importing funded wallet with 10 KTA...');
+      
+      if (!window.KeetaWalletClient) {
+        throw new Error('KeetaWalletClient not available');
+      }
+      
+      // Initialize wallet with the specific funded seed
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, fundedWalletSeed, this.currentMode);
+      
+      const walletAddress = this.wallet.getAddress();
+      console.log('💰 [IMPORT] Funded wallet imported, address:', walletAddress);
+      
+      // Verify it's the correct address
+      const expectedAddress = "keeta_aabaeenxurt2cvnpqeunx65f6x247tmo2jjnkmmppadtwvysry7jzbph5fn3dnq";
+      if (walletAddress === expectedAddress) {
+        console.log('✅ [IMPORT] Address matches funded wallet!');
+      } else {
+        console.warn('⚠️ [IMPORT] Address mismatch - expected:', expectedAddress, 'got:', walletAddress);
+      }
+      
+      // Generate unique wallet ID
+      const walletId = 'funded-' + Date.now();
+      
+      // Get existing wallets
+      const result = await chrome.storage.local.get(['wallets']);
+      const wallets = result.wallets || {};
+      
+      // Add funded wallet to storage
+      wallets[walletId] = {
+        seed: fundedWalletSeed,
+        name: 'Funded Wallet (10 KTA)',
+        address: walletAddress,
+        created: Date.now(),
+        isImported: true,
+        importMethod: 'funded-wallet',
+        hasBackedUpSeed: true
+      };
+      
+      await chrome.storage.local.set({
+        wallets: wallets,
+        selectedWallet: walletId,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode
+      });
+      
+      this.currentWalletId = walletId;
+      
+      // Update UI
+      await this.updateWalletSelector(wallets);
+      await this.updateWalletDisplay();
+      this.closeImportWalletModal();
+      this.hideLoading();
+      
+      alert('Funded wallet imported successfully! Your 10 KTA should now be visible.');
+      
+    } catch (error) {
+      console.error('Failed to import funded wallet:', error);
+      this.hideLoading();
+      alert('Failed to import funded wallet: ' + error.message);
+    }
+  }
+
   // Streamlined Create Wallet Flow
   openCreateWalletModal() {
     this.createWalletModal.classList.remove('hidden');
@@ -960,16 +1176,40 @@ class WalletPopup {
       // Generate wallet directly (KeetaWalletClient handles SDK seed generation)
       this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, null, this.currentMode);
       
-      // Store the wallet data
-      await chrome.storage.local.set({
-        walletSeed: this.wallet.getSeed(),
-        selectedNetwork: this.currentNetwork,
-        selectedMode: this.currentMode,
+      const walletSeed = this.wallet.getSeed();
+      const walletAddress = this.wallet.getAddress();
+      
+      // Generate unique wallet ID
+      const walletId = 'wallet-' + Date.now();
+      
+      // Get existing wallets
+      const result = await chrome.storage.local.get(['wallets']);
+      const wallets = result.wallets || {};
+      
+      // Add new wallet to storage
+      wallets[walletId] = {
+        seed: walletSeed,
+        name: `Wallet ${Object.keys(wallets).length + 1}`,
+        address: walletAddress,
+        created: Date.now(),
         isImported: false,
-        hasBackedUpSeed: false // User can backup later
+        hasBackedUpSeed: false
+      };
+      
+      await chrome.storage.local.set({
+        wallets: wallets,
+        selectedWallet: walletId,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode
       });
       
+      this.currentWalletId = walletId;
+      
+      console.log('💾 [CREATE] Stored new wallet:', walletId);
+      console.log('💾 [CREATE] Wallet address:', walletAddress);
+      
       // Update UI
+      await this.updateWalletSelector(wallets);
       await this.updateWalletDisplay();
       this.closeCreateWalletModal();
       this.hideLoading();
@@ -1160,71 +1400,154 @@ class WalletPopup {
     }
   }
 
-  // Enhanced Initialization
-  async loadWallet() {
+  // Multi-Wallet Management
+  async loadWallets() {
     try {
-      this.updateStatus('connecting', 'Connecting to wallet...');
+      this.updateStatus('connecting', 'Loading wallets...');
       
       // Initialize theme first
       await this.initializeTheme();
       
-      // Get stored seed and preferences
-      const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork', 'selectedMode']);
-      let seed = result.walletSeed;
+      // Get stored wallets and preferences
+      const result = await chrome.storage.local.get([
+        'wallets', 'selectedWallet', 'selectedNetwork', 'selectedMode'
+      ]);
+      
+      const wallets = result.wallets || {};
+      this.currentWalletId = result.selectedWallet || 'default';
       this.currentNetwork = result.selectedNetwork || 'testnet';
-      this.currentMode = result.selectedMode || 'demo';
+      this.currentMode = result.selectedMode || 'testnet'; // Default to real testnet
       
-      // Debug: Check stored seed format
-      console.log('🔍 [POPUP] Stored seed:', seed ? `length=${seed.length}, starts="${seed.substring(0, 10)}..."` : 'null');
+      console.log('🔍 [POPUP] Stored wallets:', Object.keys(wallets));
+      console.log('🔍 [POPUP] Selected wallet:', this.currentWalletId);
+      console.log('🔍 [POPUP] Current mode:', this.currentMode);
       
-      // Update mode selector
+      // Update selectors
       this.modeSelect.value = this.currentMode;
+      await this.updateWalletSelector(wallets);
       
-      if (!seed) {
-        // First time setup - show onboarding
-        this.showFirstTimeSetup();
+      // Load current wallet
+      const currentWalletData = wallets[this.currentWalletId];
+      
+      if (!currentWalletData || !currentWalletData.seed) {
+        // First time setup - create real wallet by default
+        await this.showFirstTimeSetup();
       } else {
         // Load existing wallet
-        await this.loadExistingWallet(seed);
+        console.log('🔍 [POPUP] Loading wallet:', this.currentWalletId);
+        await this.loadExistingWallet(currentWalletData.seed);
       }
       
     } catch (error) {
-      console.error('Failed to load wallet:', error);
+      console.error('Failed to load wallets:', error);
       this.updateStatus('error', 'Failed to connect');
     }
   }
 
-  async showFirstTimeSetup() {
-    // Streamlined first-time setup - create wallet directly
+  async updateWalletSelector(wallets) {
+    if (!this.walletSelect) return;
+    
+    // Clear existing options
+    this.walletSelect.innerHTML = '';
+    
+    // Add wallet options
+    if (Object.keys(wallets).length === 0) {
+      const option = document.createElement('option');
+      option.value = 'default';
+      option.textContent = 'Main Wallet';
+      this.walletSelect.appendChild(option);
+    } else {
+      Object.entries(wallets).forEach(([walletId, walletData]) => {
+        const option = document.createElement('option');
+        option.value = walletId;
+        option.textContent = walletData.name || `Wallet ${walletId}`;
+        if (walletId === this.currentWalletId) {
+          option.selected = true;
+        }
+        this.walletSelect.appendChild(option);
+      });
+    }
+  }
+
+  async switchWallet(walletId) {
     try {
-      console.log('🚀 [SETUP] First-time setup - creating wallet automatically...');
+      console.log('🔄 [WALLET] Switching to wallet:', walletId);
+      this.updateStatus('connecting', 'Switching wallet...');
+      
+      // Get wallet data
+      const result = await chrome.storage.local.get(['wallets']);
+      const wallets = result.wallets || {};
+      const walletData = wallets[walletId];
+      
+      if (!walletData || !walletData.seed) {
+        throw new Error('Wallet not found');
+      }
+      
+      this.currentWalletId = walletId;
+      
+      // Save selected wallet
+      await chrome.storage.local.set({ selectedWallet: walletId });
+      
+      // Load the wallet
+      await this.loadExistingWallet(walletData.seed);
+      
+      console.log('✅ [WALLET] Switched to wallet:', walletId);
+      
+    } catch (error) {
+      console.error('Failed to switch wallet:', error);
+      this.updateStatus('error', 'Failed to switch wallet');
+    }
+  }
+
+  async showFirstTimeSetup() {
+    // Create real testnet wallet by default (not demo)
+    try {
+      console.log('🚀 [SETUP] First-time setup - creating REAL testnet wallet...');
       
       if (!window.KeetaWalletClient) {
         throw new Error('KeetaWalletClient not available');
       }
       
-      // Auto-create wallet like original version
+      // Create REAL wallet (testnet mode) by default
       this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, null, this.currentMode);
       
-      // Store the wallet data
-      await chrome.storage.local.set({
-        walletSeed: this.wallet.getSeed(),
-        selectedNetwork: this.currentNetwork,
-        selectedMode: this.currentMode,
+      const walletSeed = this.wallet.getSeed();
+      const walletAddress = this.wallet.getAddress();
+      
+      // Store in new multi-wallet format
+      const walletData = {
+        seed: walletSeed,
+        name: 'Main Wallet',
+        address: walletAddress,
+        created: Date.now(),
         isImported: false,
-        hasBackedUpSeed: false // User can backup later
+        hasBackedUpSeed: false
+      };
+      
+      const wallets = {};
+      wallets[this.currentWalletId] = walletData;
+      
+      await chrome.storage.local.set({
+        wallets: wallets,
+        selectedWallet: this.currentWalletId,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode
       });
       
+      console.log('💾 [SETUP] Stored wallet in new format:', this.currentWalletId);
+      console.log('💾 [SETUP] Wallet address:', walletAddress);
+      
       // Update UI
+      await this.updateWalletSelector(wallets);
       await this.updateWalletDisplay();
       this.updateStatus('connected', 'Wallet created');
       this.updateModeIndicator();
       
-      console.log('✅ [SETUP] First-time wallet created successfully');
+      console.log('✅ [SETUP] First-time REAL wallet created successfully');
       
       // Show optional backup reminder after 3 seconds (non-blocking)
       setTimeout(() => {
-        if (confirm('💡 Wallet created! Would you like to backup your recovery phrase? (Recommended but optional)')) {
+        if (confirm('💡 Real wallet created! Would you like to backup your recovery phrase? (Recommended but optional)')) {
           this.openSeedPhraseModal();
         }
       }, 3000);

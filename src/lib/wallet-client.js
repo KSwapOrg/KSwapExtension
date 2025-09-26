@@ -238,12 +238,29 @@ class KeetaWalletClient {
 }
 
 // Make available globally for the extension
-if (typeof window !== 'undefined') {
+console.log('🔧 [DEMO-WALLET] Export check - typeof window:', typeof window);
+console.log('🔧 [DEMO-WALLET] Export check - typeof self:', typeof self);
+console.log('🔧 [DEMO-WALLET] Checking if in service worker (no DOM):', typeof document === 'undefined');
+
+// Prioritize self over window to handle service worker with window shim
+if (typeof self !== 'undefined' && typeof document === 'undefined') {
+  console.log('🔧 [DEMO-WALLET] Service worker detected - exporting to self.KeetaWalletClient');
+  self.KeetaWalletClient = KeetaWalletClient;
+  // Also export to window shim for compatibility
+  if (typeof window !== 'undefined') {
+    window.KeetaWalletClient = KeetaWalletClient;
+  }
+} else if (typeof window !== 'undefined') {
+  console.log('🔧 [DEMO-WALLET] Browser context - exporting to window.KeetaWalletClient');
   window.KeetaWalletClient = KeetaWalletClient;
 } else if (typeof self !== 'undefined') {
-  // Service worker context
+  console.log('🔧 [DEMO-WALLET] Fallback - exporting to self.KeetaWalletClient');
   self.KeetaWalletClient = KeetaWalletClient;
+} else {
+  console.log('🔧 [DEMO-WALLET] No global context found for export');
 }
+
+console.log('🔧 [DEMO-WALLET] After export - self.KeetaWalletClient exists:', !!(typeof self !== 'undefined' && self.KeetaWalletClient));
 
 // Also export for modules
 if (typeof module !== 'undefined' && module.exports) {

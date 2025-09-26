@@ -408,13 +408,31 @@ class KeetaWalletClient {
   }
 }
 
-// Make available globally
-if (typeof window !== 'undefined') {
+// Make available globally  
+console.log('🔧 [WALLET] Export check - typeof window:', typeof window);
+console.log('🔧 [WALLET] Export check - typeof self:', typeof self);
+console.log('🔧 [WALLET] Checking if in service worker (no DOM):', typeof document === 'undefined');
+
+// Prioritize self over window to handle service worker with window shim
+if (typeof self !== 'undefined' && typeof document === 'undefined') {
+  console.log('🔧 [WALLET] Service worker detected - exporting to self.KeetaWalletClient');
+  self.KeetaWalletClient = KeetaWalletClient;
+  // Also export to window shim for compatibility
+  if (typeof window !== 'undefined') {
+    window.KeetaWalletClient = KeetaWalletClient;
+  }
+} else if (typeof window !== 'undefined') {
+  console.log('🔧 [WALLET] Browser context - exporting to window.KeetaWalletClient');
   window.KeetaWalletClient = KeetaWalletClient;
 } else if (typeof self !== 'undefined') {
-  // Service worker context
+  console.log('🔧 [WALLET] Fallback - exporting to self.KeetaWalletClient');
   self.KeetaWalletClient = KeetaWalletClient;
+} else {
+  console.log('🔧 [WALLET] No global context found for export');
 }
+
+console.log('🔧 [WALLET] After export - self.KeetaWalletClient exists:', !!(typeof self !== 'undefined' && self.KeetaWalletClient));
+console.log('🔧 [WALLET] After export - window.KeetaWalletClient exists:', !!(typeof window !== 'undefined' && window.KeetaWalletClient));
 
 // Also export for modules
 if (typeof module !== 'undefined' && module.exports) {

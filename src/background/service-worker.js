@@ -53,6 +53,8 @@
     console.log('📦 [BACKGROUND] Loading real wallet client...');
     importScripts('../lib/wallet-client-real.js');
     console.log('✅ [BACKGROUND] Real wallet client loaded successfully');
+    console.log('🔍 [BACKGROUND] self.KeetaWalletClient after real client load:', !!self.KeetaWalletClient);
+    console.log('🔍 [BACKGROUND] typeof self.KeetaWalletClient:', typeof self.KeetaWalletClient);
     
   } catch (sdkError) {
     console.warn('⚠️ [BACKGROUND] SDK failed, loading demo client fallback:', sdkError.message);
@@ -62,6 +64,7 @@
       console.log('📦 [BACKGROUND] Loading demo wallet client as fallback...');
       importScripts('../lib/wallet-client.js');
       console.log('✅ [BACKGROUND] Demo wallet client loaded successfully');
+      console.log('🔍 [BACKGROUND] self.KeetaWalletClient after demo load:', !!self.KeetaWalletClient);
     } catch (fallbackError) {
       console.error('❌ [BACKGROUND] Failed to load any wallet client:', fallbackError);
     }
@@ -70,6 +73,11 @@
   console.log('🔧 [BACKGROUND] Final state:');
   console.log('- self.KeetaWalletClient exists:', !!self.KeetaWalletClient);
   console.log('- self.KeetaNet exists:', !!self.KeetaNet);
+  
+  // Debug all available objects on self that start with "Keeta"
+  const keetaGlobals = Object.keys(self).filter(key => key.includes('Keeta') || key.includes('keeta'));
+  console.log('🔍 [BACKGROUND] All Keeta-related globals:', keetaGlobals);
+  
   console.log('🔧 [BACKGROUND] === INITIALIZATION COMPLETE ===');
 })();
 

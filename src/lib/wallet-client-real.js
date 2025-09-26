@@ -238,8 +238,8 @@ class KeetaWalletClient {
     }
 
     try {
-      // Real network balance fetching
-      const balance = await this.client.getBalance(this.signer.publicKeyString.get(), 'KTA');
+      // Real network balance fetching using correct SDK API
+      const balance = await this.client.balance(this.client.baseToken);
       accountInfo.balance = balance;
       console.log('💰 [WALLET] Real balance fetched:', balance.toString());
     } catch (error) {
@@ -267,11 +267,23 @@ class KeetaWalletClient {
     }
 
     try {
-      const balance = await this.client.getBalance(this.signer.publicKeyString.get(), tokenId);
-      console.log('💰 [WALLET] Real token balance fetched:', balance.toString());
-      return balance;
+      // Use correct KeetaNet SDK API for token balance
+      if (tokenId === 'KTA' || tokenId === this.client.baseToken) {
+        const balance = await this.client.balance(this.client.baseToken);
+        console.log('💰 [WALLET] Real KTA balance fetched:', balance.toString());
+        return balance;
+      } else {
+        // For other tokens, get token account
+        const globalScope = (typeof window !== 'undefined') ? window : self;
+        const KeetaNet = globalScope.KeetaNet;
+        const tokenAccount = KeetaNet.lib.Account.fromPublicKeyString(tokenId);
+        const balance = await this.client.balance(tokenAccount);
+        console.log('💰 [WALLET] Real token balance fetched:', balance.toString());
+        return balance;
+      }
     } catch (error) {
       console.error('❌ [WALLET] Failed to fetch token balance:', error);
+      console.log(`Token ${tokenId} not found or no balance`);
       return BigInt(0);
     }
   }

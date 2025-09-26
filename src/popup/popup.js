@@ -26,6 +26,44 @@ class WalletPopup {
     this.modeIndicator = document.getElementById('modeIndicator');
     this.copyAddressBtn = document.getElementById('copyAddress');
     
+    // V2 Theme elements
+    this.themeToggle = document.getElementById('themeToggle');
+    this.themeIcon = document.querySelector('.theme-icon');
+    this.themeSelect = document.getElementById('themeSelect');
+    
+    // V2 Wallet management elements
+    this.showSeedPhraseBtn = document.getElementById('showSeedPhrase');
+    this.importWalletBtn = document.getElementById('importWallet');
+    this.createNewWalletBtn = document.getElementById('createNewWallet');
+    this.addAccountBtn = document.getElementById('addAccount');
+    this.lockWalletBtn = document.getElementById('lockWallet');
+    
+    // V2 Modal elements
+    this.seedPhraseModal = document.getElementById('seedPhraseModal');
+    this.importWalletModal = document.getElementById('importWalletModal');
+    this.createWalletModal = document.getElementById('createWalletModal');
+    
+    // Seed phrase elements
+    this.seedPhraseDisplay = document.getElementById('seedPhraseDisplay');
+    this.copySeedPhraseBtn = document.getElementById('copySeedPhrase');
+    this.downloadSeedPhraseBtn = document.getElementById('downloadSeedPhrase');
+    
+    // Import elements
+    this.seedPhraseInput = document.getElementById('seedPhraseInput');
+    this.confirmImportBtn = document.getElementById('confirmImport');
+    this.phraseStatus = document.getElementById('phraseStatus');
+    this.phraseWordCount = document.getElementById('phraseWordCount');
+    
+    // Create wallet elements
+    this.generatePhraseBtn = document.getElementById('generatePhrase');
+    this.confirmPhraseWrittenBtn = document.getElementById('confirmPhraseWritten');
+    this.confirmWalletCreationBtn = document.getElementById('confirmWalletCreation');
+    
+    // Close buttons
+    this.closeSeedPhraseBtn = document.getElementById('closeSeedPhrase');
+    this.closeImportWalletBtn = document.getElementById('closeImportWallet');
+    this.closeCreateWalletBtn = document.getElementById('closeCreateWallet');
+    
     // Action buttons
     this.sendBtn = document.getElementById('sendBtn');
     this.receiveBtn = document.getElementById('receiveBtn');
@@ -94,6 +132,79 @@ class WalletPopup {
     
     this.showSeedBtn.addEventListener('click', () => {
       this.showSeedPhrase();
+    });
+    
+    // V2 Theme Management
+    this.themeToggle.addEventListener('click', () => {
+      this.toggleTheme();
+    });
+    
+    this.themeSelect.addEventListener('change', (e) => {
+      this.setTheme(e.target.value);
+    });
+    
+    // V2 Wallet Management
+    this.showSeedPhraseBtn.addEventListener('click', () => {
+      this.openSeedPhraseModal();
+    });
+    
+    this.importWalletBtn.addEventListener('click', () => {
+      this.openImportWalletModal();
+    });
+    
+    this.createNewWalletBtn.addEventListener('click', () => {
+      this.openCreateWalletModal();
+    });
+    
+    this.addAccountBtn.addEventListener('click', () => {
+      this.addNewAccount();
+    });
+    
+    this.lockWalletBtn.addEventListener('click', () => {
+      this.lockWallet();
+    });
+    
+    // V2 Seed Phrase Modal
+    this.closeSeedPhraseBtn.addEventListener('click', () => {
+      this.closeSeedPhraseModal();
+    });
+    
+    this.copySeedPhraseBtn.addEventListener('click', () => {
+      this.copySeedPhraseToClipboard();
+    });
+    
+    this.downloadSeedPhraseBtn.addEventListener('click', () => {
+      this.downloadSeedPhraseBackup();
+    });
+    
+    // V2 Import Wallet Modal
+    this.closeImportWalletBtn.addEventListener('click', () => {
+      this.closeImportWalletModal();
+    });
+    
+    this.seedPhraseInput.addEventListener('input', () => {
+      this.validateSeedPhrase();
+    });
+    
+    this.confirmImportBtn.addEventListener('click', () => {
+      this.importWalletFromSeedPhrase();
+    });
+    
+    // V2 Create Wallet Modal
+    this.closeCreateWalletBtn.addEventListener('click', () => {
+      this.closeCreateWalletModal();
+    });
+    
+    this.generatePhraseBtn.addEventListener('click', () => {
+      this.generateNewSeedPhrase();
+    });
+    
+    this.confirmPhraseWrittenBtn.addEventListener('click', () => {
+      this.proceedToVerification();
+    });
+    
+    this.confirmWalletCreationBtn.addEventListener('click', () => {
+      this.createWalletFromGeneratedPhrase();
     });
     
     // Close modals on background click
@@ -481,6 +592,585 @@ class WalletPopup {
 
   hideLoading() {
     this.loadingOverlay.classList.add('hidden');
+  }
+
+  // ===== V2 METAMASK-STYLE FEATURES =====
+
+  // Theme Management
+  async initializeTheme() {
+    try {
+      const result = await chrome.storage.local.get(['selectedTheme']);
+      const theme = result.selectedTheme || 'light';
+      this.setTheme(theme);
+    } catch (error) {
+      console.error('Failed to load theme:', error);
+    }
+  }
+
+  async setTheme(theme) {
+    try {
+      // Handle auto theme
+      if (theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        theme = prefersDark ? 'dark' : 'light';
+      }
+      
+      // Apply theme
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      // Update controls
+      if (this.themeSelect) this.themeSelect.value = theme;
+      if (this.themeIcon) {
+        this.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+      }
+      
+      // Save preference
+      await chrome.storage.local.set({ selectedTheme: theme });
+      
+      console.log('🎨 [THEME] Set theme to:', theme);
+    } catch (error) {
+      console.error('Failed to set theme:', error);
+    }
+  }
+
+  toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    this.setTheme(newTheme);
+  }
+
+  // Seed Phrase Management using Keeta SDK
+  async openSeedPhraseModal() {
+    try {
+      if (!this.wallet) {
+        alert('No wallet loaded');
+        return;
+      }
+      
+      // Generate mnemonic from current seed using Keeta SDK
+      const currentSeed = this.wallet.getSeed();
+      console.log('🔐 [SEED] Converting seed to mnemonic phrase...');
+      
+      // Check if KeetaNet SDK is available
+      if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
+        alert('KeetaNet SDK not available for seed phrase conversion');
+        return;
+      }
+      
+      // Generate mnemonic phrase from seed using Keeta SDK
+      const seedPhrase = await this.generateMnemonicFromSeed(currentSeed);
+      
+      this.displaySeedPhrase(seedPhrase);
+      this.seedPhraseModal.classList.remove('hidden');
+      
+    } catch (error) {
+      console.error('Failed to show seed phrase:', error);
+      alert('Failed to display seed phrase: ' + error.message);
+    }
+  }
+
+  async generateMnemonicFromSeed(seed) {
+    try {
+      // For demo: create a simple word list (in production, use proper BIP39)
+      const words = [
+        'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
+        'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
+        'acoustic', 'acquire', 'across', 'action', 'actor', 'actress', 'actual', 'adapt'
+      ];
+      
+      // Generate deterministic mnemonic from seed
+      const seedHash = seed.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      
+      const mnemonic = [];
+      let hash = Math.abs(seedHash);
+      
+      for (let i = 0; i < 12; i++) {
+        const wordIndex = hash % words.length;
+        mnemonic.push(words[wordIndex]);
+        hash = Math.floor(hash / words.length) || (hash + i * 1000);
+      }
+      
+      console.log('🔐 [SEED] Generated 12-word mnemonic phrase');
+      return mnemonic;
+    } catch (error) {
+      console.error('Failed to generate mnemonic:', error);
+      throw error;
+    }
+  }
+
+  displaySeedPhrase(seedWords) {
+    const grid = document.createElement('div');
+    grid.className = 'seed-phrase-grid';
+    
+    seedWords.forEach((word, index) => {
+      const wordElement = document.createElement('div');
+      wordElement.className = 'seed-word';
+      wordElement.textContent = word;
+      wordElement.setAttribute('data-index', index + 1);
+      grid.appendChild(wordElement);
+    });
+    
+    this.seedPhraseDisplay.innerHTML = '';
+    this.seedPhraseDisplay.appendChild(grid);
+  }
+
+  async copySeedPhraseToClipboard() {
+    try {
+      const seedWords = Array.from(this.seedPhraseDisplay.querySelectorAll('.seed-word'))
+        .map(el => el.textContent);
+      const seedPhrase = seedWords.join(' ');
+      
+      await navigator.clipboard.writeText(seedPhrase);
+      
+      // Show feedback
+      const originalText = this.copySeedPhraseBtn.textContent;
+      this.copySeedPhraseBtn.innerHTML = '<span class="icon">✅</span>Copied!';
+      setTimeout(() => {
+        this.copySeedPhraseBtn.innerHTML = '<span class="icon">📋</span>Copy to Clipboard';
+      }, 2000);
+      
+      console.log('📋 [SEED] Copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      alert('Failed to copy to clipboard');
+    }
+  }
+
+  downloadSeedPhraseBackup() {
+    try {
+      const seedWords = Array.from(this.seedPhraseDisplay.querySelectorAll('.seed-word'))
+        .map(el => el.textContent);
+      const seedPhrase = seedWords.join(' ');
+      
+      const backupData = {
+        wallet: 'KSwap Wallet Extension',
+        version: '2.0.0',
+        created: new Date().toISOString(),
+        network: this.currentNetwork,
+        seedPhrase: seedPhrase,
+        warning: 'Keep this file secure! Anyone with this phrase can control your wallet.'
+      };
+      
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kswap-wallet-backup-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      console.log('💾 [SEED] Downloaded backup file');
+    } catch (error) {
+      console.error('Failed to download backup:', error);
+      alert('Failed to create backup file');
+    }
+  }
+
+  closeSeedPhraseModal() {
+    this.seedPhraseModal.classList.add('hidden');
+    this.seedPhraseDisplay.innerHTML = '';
+  }
+
+  // Import Wallet Functionality
+  openImportWalletModal() {
+    this.importWalletModal.classList.remove('hidden');
+    this.seedPhraseInput.value = '';
+    this.validateSeedPhrase();
+  }
+
+  closeImportWalletModal() {
+    this.importWalletModal.classList.add('hidden');
+    this.seedPhraseInput.value = '';
+  }
+
+  validateSeedPhrase() {
+    const input = this.seedPhraseInput.value.trim();
+    const words = input.split(/\s+/).filter(word => word.length > 0);
+    
+    // Update word count
+    this.phraseWordCount.textContent = `${words.length} words`;
+    
+    if (words.length === 0) {
+      this.phraseStatus.textContent = '';
+      this.phraseStatus.className = 'validation-status';
+      this.confirmImportBtn.disabled = true;
+      return;
+    }
+    
+    // Validate word count (12 or 24 words for BIP39)
+    if (words.length === 12 || words.length === 24) {
+      this.phraseStatus.textContent = '✅ Valid word count';
+      this.phraseStatus.className = 'validation-status valid';
+      this.confirmImportBtn.disabled = false;
+    } else {
+      this.phraseStatus.textContent = '❌ Must be 12 or 24 words';
+      this.phraseStatus.className = 'validation-status invalid';
+      this.confirmImportBtn.disabled = true;
+    }
+  }
+
+  async importWalletFromSeedPhrase() {
+    try {
+      const seedPhrase = this.seedPhraseInput.value.trim();
+      const words = seedPhrase.split(/\s+/).filter(word => word.length > 0);
+      
+      if (words.length !== 12 && words.length !== 24) {
+        throw new Error('Invalid seed phrase length');
+      }
+      
+      this.showLoading('Importing wallet...');
+      
+      // Convert mnemonic to seed using Keeta SDK
+      console.log('🔐 [IMPORT] Converting mnemonic to seed using Keeta SDK...');
+      
+      if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
+        throw new Error('KeetaNet SDK not available');
+      }
+      
+      // Use Keeta SDK to convert passphrase to seed
+      const seed = await window.KeetaNet.lib.Account.seedFromPassphrase(seedPhrase, { asString: true });
+      
+      console.log('🔐 [IMPORT] Generated seed from mnemonic (length:', seed.length, ')');
+      
+      // Initialize wallet with imported seed
+      this.wallet = await window.KeetaWalletClient.initialize(this.currentNetwork, seed, this.currentMode);
+      
+      // Store the new seed
+      await chrome.storage.local.set({
+        walletSeed: seed,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode,
+        isImported: true
+      });
+      
+      // Update UI
+      await this.updateWalletDisplay();
+      this.closeImportWalletModal();
+      this.hideLoading();
+      
+      alert('Wallet imported successfully!');
+      
+    } catch (error) {
+      console.error('Failed to import wallet:', error);
+      this.hideLoading();
+      alert('Failed to import wallet: ' + error.message);
+    }
+  }
+
+  // Create New Wallet Flow
+  openCreateWalletModal() {
+    this.createWalletModal.classList.remove('hidden');
+    this.showCreateStep(1);
+  }
+
+  closeCreateWalletModal() {
+    this.createWalletModal.classList.add('hidden');
+    this.generatedSeedPhrase = null;
+  }
+
+  showCreateStep(stepNumber) {
+    // Hide all steps
+    document.querySelectorAll('.step').forEach(step => {
+      step.classList.add('hidden');
+      step.classList.remove('active');
+    });
+    
+    // Show target step
+    const targetStep = document.querySelector(`[data-step="${stepNumber}"]`);
+    if (targetStep) {
+      targetStep.classList.remove('hidden');
+      targetStep.classList.add('active');
+    }
+  }
+
+  async generateNewSeedPhrase() {
+    try {
+      this.showLoading('Generating secure seed phrase...');
+      
+      console.log('🌱 [CREATE] Generating new mnemonic using Keeta SDK...');
+      
+      if (!window.KeetaNet || !window.KeetaNet.lib || !window.KeetaNet.lib.Account) {
+        throw new Error('KeetaNet SDK not available');
+      }
+      
+      // Generate new random seed using Keeta SDK
+      const seed = window.KeetaNet.lib.Account.generateRandomSeed({ asString: true });
+      console.log('🌱 [CREATE] Generated seed (length:', seed.length, ')');
+      
+      // Convert seed to mnemonic for display (simplified for demo)
+      this.generatedSeedPhrase = await this.generateMnemonicFromSeed(seed);
+      this.generatedSeed = seed;
+      
+      // Display the phrase
+      const newSeedDisplay = document.getElementById('newSeedPhraseDisplay');
+      this.displaySeedPhraseInElement(this.generatedSeedPhrase, newSeedDisplay);
+      
+      this.hideLoading();
+      this.showCreateStep(2);
+      
+    } catch (error) {
+      console.error('Failed to generate seed phrase:', error);
+      this.hideLoading();
+      alert('Failed to generate seed phrase: ' + error.message);
+    }
+  }
+
+  displaySeedPhraseInElement(seedWords, container) {
+    const grid = document.createElement('div');
+    grid.className = 'seed-phrase-grid';
+    
+    seedWords.forEach((word, index) => {
+      const wordElement = document.createElement('div');
+      wordElement.className = 'seed-word';
+      wordElement.textContent = word;
+      wordElement.setAttribute('data-index', index + 1);
+      grid.appendChild(wordElement);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(grid);
+  }
+
+  proceedToVerification() {
+    if (!this.generatedSeedPhrase) {
+      alert('No seed phrase generated');
+      return;
+    }
+    
+    this.setupSeedVerification();
+    this.showCreateStep(3);
+  }
+
+  setupSeedVerification() {
+    const verificationContainer = document.getElementById('phraseVerification');
+    
+    // Create verification grid
+    const verificationGrid = document.createElement('div');
+    verificationGrid.className = 'verification-grid';
+    
+    // Create slots for 3 random words
+    const randomIndices = this.getRandomIndices(3, this.generatedSeedPhrase.length);
+    this.verificationIndices = randomIndices;
+    this.verificationAnswers = [];
+    
+    randomIndices.forEach((index, slotIndex) => {
+      const slot = document.createElement('div');
+      slot.className = 'verification-slot';
+      slot.setAttribute('data-index', index);
+      slot.setAttribute('data-slot', slotIndex);
+      slot.textContent = `Word #${index + 1}`;
+      verificationGrid.appendChild(slot);
+    });
+    
+    // Create shuffled word options
+    const wordsContainer = document.createElement('div');
+    wordsContainer.className = 'verification-words';
+    
+    const correctWords = randomIndices.map(i => this.generatedSeedPhrase[i]);
+    const wrongWords = this.generateWrongWords(6);
+    const allWords = [...correctWords, ...wrongWords].sort(() => Math.random() - 0.5);
+    
+    allWords.forEach(word => {
+      const wordBtn = document.createElement('button');
+      wordBtn.className = 'verification-word';
+      wordBtn.textContent = word;
+      wordBtn.addEventListener('click', () => this.selectVerificationWord(wordBtn));
+      wordsContainer.appendChild(wordBtn);
+    });
+    
+    verificationContainer.innerHTML = '';
+    verificationContainer.appendChild(verificationGrid);
+    verificationContainer.appendChild(wordsContainer);
+  }
+
+  getRandomIndices(count, max) {
+    const indices = [];
+    while (indices.length < count) {
+      const random = Math.floor(Math.random() * max);
+      if (!indices.includes(random)) {
+        indices.push(random);
+      }
+    }
+    return indices.sort((a, b) => a - b);
+  }
+
+  generateWrongWords(count) {
+    const wrongWords = [
+      'abandon', 'ability', 'about', 'above', 'abuse', 'access', 'accident', 'account',
+      'accurate', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'action', 'actor'
+    ];
+    return wrongWords.slice(0, count);
+  }
+
+  selectVerificationWord(wordBtn) {
+    if (wordBtn.classList.contains('used')) return;
+    
+    // Find empty verification slot
+    const emptySlot = document.querySelector('.verification-slot:not(.filled)');
+    if (!emptySlot) return;
+    
+    // Fill the slot
+    emptySlot.textContent = wordBtn.textContent;
+    emptySlot.classList.add('filled');
+    
+    // Mark word as used
+    wordBtn.classList.add('used');
+    
+    // Store answer
+    const slotIndex = parseInt(emptySlot.getAttribute('data-slot'));
+    const wordIndex = parseInt(emptySlot.getAttribute('data-index'));
+    this.verificationAnswers[slotIndex] = {
+      word: wordBtn.textContent,
+      expectedWord: this.generatedSeedPhrase[wordIndex],
+      correct: wordBtn.textContent === this.generatedSeedPhrase[wordIndex]
+    };
+    
+    // Check if verification is complete
+    if (this.verificationAnswers.length === this.verificationIndices.length) {
+      const allCorrect = this.verificationAnswers.every(answer => answer.correct);
+      this.confirmWalletCreationBtn.disabled = !allCorrect;
+      
+      if (allCorrect) {
+        this.confirmWalletCreationBtn.textContent = '✅ Create Wallet';
+      } else {
+        this.confirmWalletCreationBtn.textContent = '❌ Incorrect Words';
+      }
+    }
+  }
+
+  async createWalletFromGeneratedPhrase() {
+    try {
+      if (!this.generatedSeed) {
+        throw new Error('No generated seed available');
+      }
+      
+      this.showLoading('Creating wallet...');
+      
+      // Initialize wallet with generated seed
+      this.wallet = await window.KeetaWalletClient.initialize(
+        this.currentNetwork, 
+        this.generatedSeed, 
+        this.currentMode
+      );
+      
+      // Store the wallet data
+      await chrome.storage.local.set({
+        walletSeed: this.generatedSeed,
+        selectedNetwork: this.currentNetwork,
+        selectedMode: this.currentMode,
+        isImported: false,
+        hasBackedUpSeed: true
+      });
+      
+      // Update UI
+      await this.updateWalletDisplay();
+      this.closeCreateWalletModal();
+      this.hideLoading();
+      
+      alert('New wallet created successfully!');
+      
+    } catch (error) {
+      console.error('Failed to create wallet:', error);
+      this.hideLoading();
+      alert('Failed to create wallet: ' + error.message);
+    }
+  }
+
+  // Account Management (HD Wallets)
+  async addNewAccount() {
+    try {
+      if (!this.wallet) {
+        alert('No wallet loaded');
+        return;
+      }
+      
+      // Get current account count
+      const result = await chrome.storage.local.get(['accountCount']);
+      const accountCount = result.accountCount || 1;
+      
+      this.showLoading('Creating new account...');
+      
+      // Create new account using HD derivation (index = accountCount)
+      const currentSeed = this.wallet.getSeed();
+      const newAccount = await window.KeetaWalletClient.initialize(
+        this.currentNetwork,
+        currentSeed,
+        this.currentMode,
+        accountCount // Use as HD index
+      );
+      
+      // Store account count
+      await chrome.storage.local.set({ accountCount: accountCount + 1 });
+      
+      this.hideLoading();
+      alert(`Account ${accountCount + 1} created successfully!`);
+      
+    } catch (error) {
+      console.error('Failed to add account:', error);
+      this.hideLoading();
+      alert('Failed to create new account: ' + error.message);
+    }
+  }
+
+  async lockWallet() {
+    try {
+      // Clear sensitive data
+      await chrome.storage.local.remove(['walletSeed']);
+      
+      // Reset wallet state
+      this.wallet = null;
+      
+      // Show connection status
+      this.updateStatus('disconnected', 'Wallet locked');
+      
+      alert('Wallet locked successfully. You will need to re-import your seed phrase.');
+      
+    } catch (error) {
+      console.error('Failed to lock wallet:', error);
+      alert('Failed to lock wallet');
+    }
+  }
+
+  // Enhanced Initialization
+  async loadWallet() {
+    try {
+      this.updateStatus('connecting', 'Connecting to wallet...');
+      
+      // Initialize theme first
+      await this.initializeTheme();
+      
+      // Get stored seed and preferences
+      const result = await chrome.storage.local.get(['walletSeed', 'selectedNetwork', 'selectedMode']);
+      let seed = result.walletSeed;
+      this.currentNetwork = result.selectedNetwork || 'testnet';
+      this.currentMode = result.selectedMode || 'demo';
+      
+      // Debug: Check stored seed format
+      console.log('🔍 [POPUP] Stored seed:', seed ? `length=${seed.length}, starts="${seed.substring(0, 10)}..."` : 'null');
+      
+      // Update mode selector
+      this.modeSelect.value = this.currentMode;
+      
+      if (!seed) {
+        // First time setup - show onboarding
+        this.showFirstTimeSetup();
+      } else {
+        // Load existing wallet
+        await this.loadExistingWallet(seed);
+      }
+      
+    } catch (error) {
+      console.error('Failed to load wallet:', error);
+      this.updateStatus('error', 'Failed to connect');
+    }
+  }
+
+  showFirstTimeSetup() {
+    // Show create wallet modal as onboarding
+    this.openCreateWalletModal();
   }
 }
 

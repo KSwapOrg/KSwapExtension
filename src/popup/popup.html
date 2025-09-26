@@ -19,13 +19,19 @@
           <img src="../../icons/KSwapLogo.png" alt="Keeta" class="logo-icon">
           <h1>KSwap Wallet</h1>
         </div>
-        <div class="network-selector">
-          <select id="modeSelect">
-            <option value="demo">Demo Mode</option>
-            <option value="testnet">Testnet (Real)</option>
-            <option value="mainnet">Mainnet (Real)</option>
-          </select>
+        <div class="header-controls">
+          <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+            <span class="theme-icon">🌙</span>
+          </button>
+          <div class="network-selector">
+            <select id="modeSelect">
+              <option value="demo">Demo Mode</option>
+              <option value="testnet">Testnet (Real)</option>
+              <option value="mainnet">Mainnet (Real)</option>
+            </select>
+          </div>
         </div>
+        <span id="modeIndicator" class="mode-indicator">Demo</span>
       </header>
 
       <!-- Connection Status -->
@@ -100,14 +106,217 @@
             <button id="closeSettings" class="close-btn">&times;</button>
           </div>
           <div class="modal-body">
+            <!-- Theme Settings -->
             <div class="setting-group">
-              <h4>Backup Seed</h4>
-              <p class="warning">⚠️ Keep your seed phrase safe and private!</p>
-              <button id="showSeed" class="action-btn secondary">Show Seed Phrase</button>
+              <h4>Appearance</h4>
+              <div class="setting-item">
+                <label for="themeSelect">Theme:</label>
+                <select id="themeSelect" class="setting-select">
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="auto">Auto (System)</option>
+                </select>
+              </div>
             </div>
+
+            <!-- Wallet Management -->
             <div class="setting-group">
-              <h4>Network</h4>
-              <p>Current: <span id="currentNetwork"></span></p>
+              <h4>Wallet Management</h4>
+              <div class="setting-item">
+                <button id="showSeedPhrase" class="action-btn secondary full-width">
+                  <span class="icon">🔐</span>
+                  Show Secret Recovery Phrase
+                </button>
+                <p class="setting-description">Display your 12-word recovery phrase</p>
+              </div>
+              <div class="setting-item">
+                <button id="importWallet" class="action-btn secondary full-width">
+                  <span class="icon">📥</span>
+                  Import Wallet
+                </button>
+                <p class="setting-description">Import wallet from recovery phrase</p>
+              </div>
+              <div class="setting-item">
+                <button id="createNewWallet" class="action-btn secondary full-width">
+                  <span class="icon">➕</span>
+                  Create New Wallet
+                </button>
+                <p class="setting-description">Generate a new wallet with recovery phrase</p>
+              </div>
+            </div>
+
+            <!-- Account Management -->
+            <div class="setting-group">
+              <h4>Accounts</h4>
+              <div class="setting-item">
+                <button id="addAccount" class="action-btn secondary full-width">
+                  <span class="icon">👤</span>
+                  Add Account
+                </button>
+                <p class="setting-description">Create additional account from same recovery phrase</p>
+              </div>
+            </div>
+
+            <!-- Network Info -->
+            <div class="setting-group">
+              <h4>Network Information</h4>
+              <div class="setting-item">
+                <label>Current Network:</label>
+                <span id="currentNetwork" class="setting-value"></span>
+              </div>
+              <div class="setting-item">
+                <label>Wallet Address:</label>
+                <span id="currentAddress" class="setting-value address-text"></span>
+              </div>
+            </div>
+
+            <!-- Security -->
+            <div class="setting-group">
+              <h4>Security</h4>
+              <div class="setting-item">
+                <button id="lockWallet" class="action-btn danger full-width">
+                  <span class="icon">🔒</span>
+                  Lock Wallet
+                </button>
+                <p class="setting-description">Require password to unlock</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seed Phrase Display Modal -->
+      <div id="seedPhraseModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>🔐 Secret Recovery Phrase</h3>
+            <button id="closeSeedPhrase" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="warning-box">
+              <p class="warning-text">⚠️ <strong>Never share your recovery phrase!</strong></p>
+              <p>Anyone with this phrase can control your wallet and funds.</p>
+            </div>
+            <div id="seedPhraseDisplay" class="seed-phrase-display">
+              <!-- 12-word grid will be populated here -->
+            </div>
+            <div class="seed-actions">
+              <button id="copySeedPhrase" class="action-btn secondary">
+                <span class="icon">📋</span>
+                Copy to Clipboard
+              </button>
+              <button id="downloadSeedPhrase" class="action-btn secondary">
+                <span class="icon">💾</span>
+                Download Backup
+              </button>
+            </div>
+            <div class="security-checklist">
+              <h4>Security Checklist:</h4>
+              <label class="checkbox-item">
+                <input type="checkbox" id="securityCheck1">
+                I have written down my recovery phrase
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="securityCheck2">
+                I understand this phrase controls my wallet
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="securityCheck3">
+                I will never share this phrase with anyone
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import Wallet Modal -->
+      <div id="importWalletModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>📥 Import Wallet</h3>
+            <button id="closeImportWallet" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="import-options">
+              <div class="import-method active" data-method="phrase">
+                <h4>Recovery Phrase</h4>
+                <p>Import using 12 or 24-word recovery phrase</p>
+              </div>
+            </div>
+            <div class="import-content">
+              <div id="phraseImport" class="import-section">
+                <label for="seedPhraseInput">Enter your recovery phrase:</label>
+                <textarea 
+                  id="seedPhraseInput" 
+                  class="seed-input" 
+                  placeholder="word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12"
+                  rows="4"
+                ></textarea>
+                <div class="phrase-validation">
+                  <span id="phraseStatus" class="validation-status"></span>
+                  <span id="phraseWordCount" class="word-count">0 words</span>
+                </div>
+                <div class="form-group">
+                  <label for="walletPassword">Create wallet password (optional):</label>
+                  <input type="password" id="walletPassword" class="form-input" placeholder="Enter password">
+                </div>
+                <div class="import-actions">
+                  <button id="confirmImport" class="action-btn primary full-width" disabled>
+                    Import Wallet
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create New Wallet Modal -->
+      <div id="createWalletModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>➕ Create New Wallet</h3>
+            <button id="closeCreateWallet" class="close-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="create-steps">
+              <div class="step active" data-step="1">
+                <h4>Step 1: Generate Recovery Phrase</h4>
+                <p>We'll generate a 12-word recovery phrase for you.</p>
+                <div class="step-actions">
+                  <button id="generatePhrase" class="action-btn primary full-width">
+                    Generate Recovery Phrase
+                  </button>
+                </div>
+              </div>
+              
+              <div class="step hidden" data-step="2">
+                <h4>Step 2: Write Down Your Recovery Phrase</h4>
+                <div class="warning-box">
+                  <p>⚠️ Write these words down in order and keep them safe!</p>
+                </div>
+                <div id="newSeedPhraseDisplay" class="seed-phrase-display">
+                  <!-- Generated phrase will appear here -->
+                </div>
+                <div class="step-actions">
+                  <button id="confirmPhraseWritten" class="action-btn primary full-width">
+                    I've Written It Down
+                  </button>
+                </div>
+              </div>
+              
+              <div class="step hidden" data-step="3">
+                <h4>Step 3: Verify Recovery Phrase</h4>
+                <p>Select the words in the correct order to verify you wrote them down:</p>
+                <div id="phraseVerification" class="phrase-verification">
+                  <!-- Verification interface will appear here -->
+                </div>
+                <div class="step-actions">
+                  <button id="confirmWalletCreation" class="action-btn primary full-width" disabled>
+                    Create Wallet
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ class WalletPopup {
     this.currentMode = 'demo';
     this.tokens = [];
     
+    console.log('🚀 [POPUP] Initializing WalletPopup v2...');
     this.initializeElements();
     this.attachEventListeners();
     this.loadWallet();
@@ -69,6 +70,15 @@ class WalletPopup {
     this.receiveBtn = document.getElementById('receiveBtn');
     this.settingsBtn = document.getElementById('settingsBtn');
     
+    // Debug: Check which elements are missing
+    console.log('🔍 [POPUP] Element availability check:');
+    console.log('- themeToggle:', !!this.themeToggle);
+    console.log('- themeSelect:', !!this.themeSelect);
+    console.log('- showSeedPhraseBtn:', !!this.showSeedPhraseBtn);
+    console.log('- importWalletBtn:', !!this.importWalletBtn);
+    console.log('- createNewWalletBtn:', !!this.createNewWalletBtn);
+    console.log('- showSeedBtn (legacy):', !!this.showSeedBtn);
+    
     // Modals
     this.sendModal = document.getElementById('sendModal');
     this.settingsModal = document.getElementById('settingsModal');
@@ -84,7 +94,7 @@ class WalletPopup {
     
     // Settings elements
     this.closeSettingsBtn = document.getElementById('closeSettings');
-    this.showSeedBtn = document.getElementById('showSeed');
+    this.showSeedBtn = document.getElementById('showSeed'); // Legacy - might not exist
     this.currentNetworkSpan = document.getElementById('currentNetwork');
   }
 
@@ -130,82 +140,119 @@ class WalletPopup {
       this.closeSettingsModal();
     });
     
-    this.showSeedBtn.addEventListener('click', () => {
-      this.showSeedPhrase();
-    });
+    // Legacy seed button (if exists)
+    if (this.showSeedBtn) {
+      this.showSeedBtn.addEventListener('click', () => {
+        this.showSeedPhrase();
+      });
+    }
     
     // V2 Theme Management
-    this.themeToggle.addEventListener('click', () => {
-      this.toggleTheme();
-    });
+    if (this.themeToggle) {
+      this.themeToggle.addEventListener('click', () => {
+        this.toggleTheme();
+      });
+    }
     
-    this.themeSelect.addEventListener('change', (e) => {
-      this.setTheme(e.target.value);
-    });
+    if (this.themeSelect) {
+      this.themeSelect.addEventListener('change', (e) => {
+        this.setTheme(e.target.value);
+      });
+    }
     
-    // V2 Wallet Management
-    this.showSeedPhraseBtn.addEventListener('click', () => {
-      this.openSeedPhraseModal();
-    });
+    // V2 Wallet Management (with null checks)
+    if (this.showSeedPhraseBtn) {
+      this.showSeedPhraseBtn.addEventListener('click', () => {
+        this.openSeedPhraseModal();
+      });
+    }
     
-    this.importWalletBtn.addEventListener('click', () => {
-      this.openImportWalletModal();
-    });
+    if (this.importWalletBtn) {
+      this.importWalletBtn.addEventListener('click', () => {
+        this.openImportWalletModal();
+      });
+    }
     
-    this.createNewWalletBtn.addEventListener('click', () => {
-      this.openCreateWalletModal();
-    });
+    if (this.createNewWalletBtn) {
+      this.createNewWalletBtn.addEventListener('click', () => {
+        this.openCreateWalletModal();
+      });
+    }
     
-    this.addAccountBtn.addEventListener('click', () => {
-      this.addNewAccount();
-    });
+    if (this.addAccountBtn) {
+      this.addAccountBtn.addEventListener('click', () => {
+        this.addNewAccount();
+      });
+    }
     
-    this.lockWalletBtn.addEventListener('click', () => {
-      this.lockWallet();
-    });
+    if (this.lockWalletBtn) {
+      this.lockWalletBtn.addEventListener('click', () => {
+        this.lockWallet();
+      });
+    }
     
-    // V2 Seed Phrase Modal
-    this.closeSeedPhraseBtn.addEventListener('click', () => {
-      this.closeSeedPhraseModal();
-    });
+    // V2 Seed Phrase Modal (with null checks)
+    if (this.closeSeedPhraseBtn) {
+      this.closeSeedPhraseBtn.addEventListener('click', () => {
+        this.closeSeedPhraseModal();
+      });
+    }
     
-    this.copySeedPhraseBtn.addEventListener('click', () => {
-      this.copySeedPhraseToClipboard();
-    });
+    if (this.copySeedPhraseBtn) {
+      this.copySeedPhraseBtn.addEventListener('click', () => {
+        this.copySeedPhraseToClipboard();
+      });
+    }
     
-    this.downloadSeedPhraseBtn.addEventListener('click', () => {
-      this.downloadSeedPhraseBackup();
-    });
+    if (this.downloadSeedPhraseBtn) {
+      this.downloadSeedPhraseBtn.addEventListener('click', () => {
+        this.downloadSeedPhraseBackup();
+      });
+    }
     
-    // V2 Import Wallet Modal
-    this.closeImportWalletBtn.addEventListener('click', () => {
-      this.closeImportWalletModal();
-    });
+    // V2 Import Wallet Modal (with null checks)
+    if (this.closeImportWalletBtn) {
+      this.closeImportWalletBtn.addEventListener('click', () => {
+        this.closeImportWalletModal();
+      });
+    }
     
-    this.seedPhraseInput.addEventListener('input', () => {
-      this.validateSeedPhrase();
-    });
+    if (this.seedPhraseInput) {
+      this.seedPhraseInput.addEventListener('input', () => {
+        this.validateSeedPhrase();
+      });
+    }
     
-    this.confirmImportBtn.addEventListener('click', () => {
-      this.importWalletFromSeedPhrase();
-    });
+    if (this.confirmImportBtn) {
+      this.confirmImportBtn.addEventListener('click', () => {
+        this.importWalletFromSeedPhrase();
+      });
+    }
     
-    // V2 Create Wallet Modal
-    this.closeCreateWalletBtn.addEventListener('click', () => {
-      this.closeCreateWalletModal();
-    });
+    // V2 Create Wallet Modal (with null checks)
+    if (this.closeCreateWalletBtn) {
+      this.closeCreateWalletBtn.addEventListener('click', () => {
+        this.closeCreateWalletModal();
+      });
+    }
     
-    this.generatePhraseBtn.addEventListener('click', () => {
-      this.generateNewSeedPhrase();
-    });
+    if (this.generatePhraseBtn) {
+      this.generatePhraseBtn.addEventListener('click', () => {
+        this.generateNewSeedPhrase();
+      });
+    }
     
-    this.confirmPhraseWrittenBtn.addEventListener('click', () => {
-      this.proceedToVerification();
-    });
+    if (this.confirmPhraseWrittenBtn) {
+      this.confirmPhraseWrittenBtn.addEventListener('click', () => {
+        this.proceedToVerification();
+      });
+    }
     
-    this.confirmWalletCreationBtn.addEventListener('click', () => {
-      this.createWalletFromGeneratedPhrase();
-    });
+    if (this.confirmWalletCreationBtn) {
+      this.confirmWalletCreationBtn.addEventListener('click', () => {
+        this.createWalletFromGeneratedPhrase();
+      });
+    }
     
     // Close modals on background click
     this.sendModal.addEventListener('click', (e) => {

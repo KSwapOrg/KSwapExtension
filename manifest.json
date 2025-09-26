@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "KSwap Wallet Extension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A secure Chrome extension wallet for the Keeta Network by KSwap",
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
     "https://*.keeta.com/*",

@@ -459,14 +459,23 @@ class WalletPopup {
     const div = document.createElement('div');
     div.className = 'token-item';
     
-    const balance = Number(token.balance) / Math.pow(10, token.decimals);
+    // Handle bigint properly
+    const balanceBigInt = typeof token.balance === 'bigint' ? token.balance : BigInt(token.balance);
+    const balance = Number(balanceBigInt) / Math.pow(10, token.decimals);
+    
+    // Format balance appropriately - show up to 4 significant decimal places, but remove trailing zeros
+    const formattedBalance = balance.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: Math.min(4, token.decimals),
+      useGrouping: false  // No comma thousands separators
+    });
     
     div.innerHTML = `
       <div class="token-info">
         <div class="token-symbol">${token.symbol}</div>
         <div class="token-name">${token.name}</div>
       </div>
-      <div class="token-balance">${balance.toFixed(4)}</div>
+      <div class="token-balance">${formattedBalance}</div>
     `;
     
     return div;
@@ -602,8 +611,23 @@ class WalletPopup {
     try {
       this.showLoading('Sending tokens...');
       
+      console.log('💸 [SEND] Looking for token:', tokenId);
+      console.log('💸 [SEND] Available tokens:', this.tokens.map(t => ({ id: t.id, symbol: t.symbol })));
+      
       const token = this.tokens.find(t => t.id === tokenId);
+      if (!token) {
+        throw new Error(`Token ${tokenId} not found in available tokens`);
+      }
+      
+      console.log('💸 [SEND] Found token:', token);
       const amountBigInt = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, token.decimals)));
+      
+      console.log('💸 [SEND] Sending:', {
+        toAddress,
+        amount: amountBigInt.toString(),
+        tokenId,
+        decimals: token.decimals
+      });
       
       const result = await this.wallet.sendTokens(toAddress, amountBigInt, tokenId);
       

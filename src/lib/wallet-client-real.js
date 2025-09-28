@@ -548,9 +548,9 @@ class KeetaWalletClient {
     if (this.mode === 'demo') {
       // Demo tokens
       return [
-        { symbol: 'KTA', name: 'Keeta Token', balance: BigInt('1000000000000000'), decimals: 9 },
-        { symbol: 'USDC', name: 'USD Coin', balance: BigInt('5000000000'), decimals: 6 },
-        { symbol: 'ETH', name: 'Ethereum', balance: BigInt('2000000000000000000'), decimals: 18 },
+        { id: 'KTA', symbol: 'KTA', name: 'Keeta Token', balance: BigInt('1000000000000000'), decimals: 9 },
+        { id: 'USDC', symbol: 'USDC', name: 'USD Coin', balance: BigInt('5000000000'), decimals: 6 },
+        { id: 'ETH', symbol: 'ETH', name: 'Ethereum', balance: BigInt('2000000000000000000'), decimals: 18 },
       ];
     }
 
@@ -558,7 +558,7 @@ class KeetaWalletClient {
       // Real token discovery would go here
       const ktaBalance = await this.getTokenBalance('KTA');
       return [
-        { symbol: 'KTA', name: 'Keeta Token', balance: ktaBalance, decimals: 9 }
+        { id: 'KTA', symbol: 'KTA', name: 'Keeta Token', balance: ktaBalance, decimals: 9 }
       ];
     } catch (error) {
       console.error('❌ [WALLET] Token discovery failed:', error);
@@ -586,14 +586,70 @@ class KeetaWalletClient {
     }
 
     try {
-      // Real transaction would go here
-      return {
-        success: true,
-        transactionId: 'real_tx_' + Date.now(),
-        blockId: 'real_block_' + Date.now()
-      };
+      console.log('🚀 [WALLET] Initiating real transaction...');
+      
+      // Validate recipient address format
+      if (!toAddress.startsWith('keeta_') || toAddress.length < 60) {
+        throw new Error('Invalid recipient address format');
+      }
+      
+      // Parse recipient address
+      let recipientAccount;
+      try {
+        recipientAccount = KeetaNet.lib.Account.fromPublicKeyString(toAddress);
+        console.log('✅ [WALLET] Recipient address parsed successfully');
+      } catch (error) {
+        throw new Error('Invalid recipient address: ' + error.message);
+      }
+      
+      // For KTA (base token), send using UserClient.send
+      if (tokenId === 'KTA') {
+        console.log('💰 [WALLET] Sending KTA base token...');
+        console.log('💰 [WALLET] Using UserClient.send() method...');
+        
+        // Use the high-level UserClient.send method instead of low-level client.send
+        const result = await this.client.send(
+          toAddress,          // to (string address)
+          amount,             // amount (already in smallest units)
+          this.client.baseToken  // token (base token)
+        );
+        
+        console.log('✅ [WALLET] KTA transaction result:', result);
+        
+        // Extract transaction details from the result
+        let transactionId = 'tx_' + Date.now();
+        let blockId = 'block_' + Date.now();
+        
+        if (result.voteStaple && result.voteStaple.blocks && result.voteStaple.blocks.length > 0) {
+          const firstBlock = result.voteStaple.blocks[0];
+          if (firstBlock.hash) {
+            transactionId = firstBlock.hash;
+          }
+          blockId = result.voteStaple.hash || blockId;
+        }
+        
+        return {
+          success: true,
+          transactionId: transactionId,
+          blockId: blockId,
+          transaction: result,
+          published: result.publish || false
+        };
+      }
+      
+      // For other tokens, use token-specific send (if implemented)
+      else {
+        console.log('🪙 [WALLET] Sending custom token:', tokenId);
+        
+        // Parse token account
+        const tokenAccount = KeetaNet.lib.Account.fromPublicKeyString(tokenId);
+        
+        // For now, return error as custom token sending needs more implementation
+        throw new Error('Custom token sending not yet implemented');
+      }
+      
     } catch (error) {
-      console.error('❌ [WALLET] Send failed:', error);
+      console.error('❌ [WALLET] Send transaction failed:', error);
       return {
         success: false,
         error: error.message

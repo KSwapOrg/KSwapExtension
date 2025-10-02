@@ -1,4 +1,5 @@
-// Keeta Wallet Extension Popup
+// Keeta Wallet Extension Popup - v2.0.2 Production
+// Build timestamp: 2025-10-02 - Reorganized Header UI
 class WalletPopup {
   constructor() {
     this.wallet = null;
@@ -788,6 +789,16 @@ class WalletPopup {
         return;
       }
       
+      // Check if modal element exists
+      if (!this.seedPhraseModal) {
+        console.error('❌ [SEED] seedPhraseModal not found, re-querying...');
+        this.seedPhraseModal = document.getElementById('seedPhraseModal');
+        if (!this.seedPhraseModal) {
+          alert('Error: Seed phrase modal not found. Please reload the extension.');
+          return;
+        }
+      }
+      
       // Generate mnemonic from current seed using Keeta SDK
       const currentSeed = this.wallet.getSeed();
       console.log('🔐 [SEED] Converting seed to mnemonic phrase...');
@@ -843,6 +854,17 @@ class WalletPopup {
   }
 
   displaySeedPhrase(seedWords) {
+    // Safety check for element existence
+    if (!this.seedPhraseDisplay) {
+      console.error('❌ [SEED] seedPhraseDisplay element not found! Re-querying...');
+      this.seedPhraseDisplay = document.getElementById('seedPhraseDisplay');
+      if (!this.seedPhraseDisplay) {
+        console.error('❌ [SEED] seedPhraseDisplay still not found after re-query');
+        alert('Error: Could not display seed phrase. Please try reopening Settings > Show Seed Phrase');
+        return;
+      }
+    }
+    
     const grid = document.createElement('div');
     grid.className = 'seed-phrase-grid';
     
@@ -1352,6 +1374,11 @@ class WalletPopup {
   }
 
   displaySeedPhraseInElement(seedWords, container) {
+    if (!container) {
+      console.error('❌ [SEED] Container element is null in displaySeedPhraseInElement');
+      return;
+    }
+    
     const grid = document.createElement('div');
     grid.className = 'seed-phrase-grid';
     

@@ -4,49 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KSwap Wallet Extension</title>
-  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="popup.css?v=2.0.2">
 </head>
 <body>
     <!-- Load KeetaNet SDK with proper CommonJS setup -->
-    <script src="../lib/keeta-sdk-setup.js"></script>
+    <script src="../lib/keeta-sdk-setup.js?v=2.0.2"></script>
     <!-- Load wallet client -->
-    <script src="../lib/wallet-client-real.js"></script>
+    <script src="../lib/wallet-client-real.js?v=2.0.2"></script>
   <div id="app">
     <div class="wallet-container">
       <!-- Header -->
       <header class="wallet-header">
-        <div class="logo">
-          <img src="../../icons/KSwapLogo.png" alt="Keeta" class="logo-icon">
-          <h1>KSwap Wallet</h1>
-        </div>
-        <div class="header-controls">
+        <div class="header-top">
+          <div class="logo">
+            <img src="../../icons/KSwapLogo.png" alt="Keeta" class="logo-icon">
+            <div class="logo-text">
+              <h1>KSwap Wallet</h1>
+              <div class="version-info">
+                <span class="version">v2.0.2</span>
+                <span class="divider">•</span>
+                <a href="https://github.com/KSwapOrg/KSwapExtension" target="_blank" class="github-link" title="View on GitHub">GitHub</a>
+                <span class="divider">•</span>
+                <a href="https://github.com/KSwapOrg/KSwapExtension/blob/main/LICENSE" target="_blank" class="license-link" title="View License">BSL 1.1</a>
+              </div>
+            </div>
+          </div>
           <button id="themeToggle" class="theme-toggle" title="Toggle theme">
             <span class="theme-icon">🌙</span>
           </button>
+        </div>
+        <div class="header-bottom">
           <div class="wallet-selector">
             <select id="walletSelect" class="wallet-select">
               <option value="default">Main Wallet</option>
             </select>
-            <button id="addWalletBtn" class="add-wallet-btn" title="Add wallet">
-              <span>+</span>
-            </button>
+            <button id="addWalletBtn" class="add-wallet-btn" title="Add wallet">+</button>
           </div>
           <div class="network-selector">
             <select id="modeSelect">
-              <option value="demo">Demo Mode</option>
               <option value="testnet">Testnet (Real)</option>
               <option value="mainnet">Mainnet (Real)</option>
             </select>
           </div>
         </div>
-        <span id="modeIndicator" class="mode-indicator">Demo</span>
       </header>
 
       <!-- Connection Status -->
       <div id="connectionStatus" class="connection-status">
         <div class="status-indicator"></div>
         <span id="statusText">Connecting...</span>
-        <span id="modeIndicator" class="mode-indicator"></span>
       </div>
 
       <!-- Wallet Content -->
@@ -396,6 +402,6 @@
     </div>
   </div>
 
-  <script src="popup.js"></script>
+  <script src="popup.js?v=2.0.2"></script>
 </body>
 </html>

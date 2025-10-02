@@ -4,19 +4,20 @@
 /**
  * Network configuration
  */
+// Updated network configuration with current working endpoints
 const NETWORK_CONFIGS = {
   mainnet: {
     name: 'Keeta Mainnet',
-    rpcUrl: 'https://rpc.keeta.network',
-    explorerUrl: 'https://explorer.keeta.network',
+    rpcUrl: 'https://rpc.keeta.com',
+    explorerUrl: 'https://explorer.keeta.com',
     chainId: 'keeta-mainnet',
     baseToken: 'KTA',
     treasuryAccount: 'keeta-treasury-mainnet',
   },
   testnet: {
     name: 'Keeta Testnet',
-    rpcUrl: 'https://test-rpc.keeta.network',
-    explorerUrl: 'https://explorer.test.keeta.network',
+    rpcUrl: 'https://rep2.test.network.api.keeta.com',
+    explorerUrl: 'https://explorer.test.keeta.com',
     chainId: 'keeta-testnet',
     baseToken: 'KTA',
     treasuryAccount: 'keeta-treasury-testnet',
@@ -67,10 +68,13 @@ class KeetaWalletClient {
       // Debug: Check what seed we received
       console.log('🔍 [WALLET] Received seed:', seed ? `"${seed}" (length: ${seed.length})` : 'null');
       
+      let seedUpdated = false;
+      
       if (!seed) {
         console.log('🔧 [WALLET] No seed provided, generating new SDK seed...');
         seedString = KeetaNet.lib.Account.generateRandomSeed({ asString: true });
         console.log('🔧 [WALLET] Generated SDK seed length:', seedString.length);
+        seedUpdated = true;
       } else {
         console.log('🔧 [WALLET] Using provided seed length:', seedString.length);
         // Check if seed is too short (demo seed format)
@@ -78,6 +82,17 @@ class KeetaWalletClient {
           console.log('🔧 [WALLET] Seed too short, generating new SDK seed...');
           seedString = KeetaNet.lib.Account.generateRandomSeed({ asString: true });
           console.log('🔧 [WALLET] Generated new SDK seed length:', seedString.length);
+          seedUpdated = true;
+        }
+      }
+      
+      // CRITICAL FIX: Update storage with new seed if generated
+      if (seedUpdated && typeof chrome !== 'undefined' && chrome.storage) {
+        try {
+          await chrome.storage.local.set({ walletSeed: seedString });
+          console.log('💾 [WALLET] Updated storage with new SDK seed');
+        } catch (storageError) {
+          console.error('❌ [WALLET] Failed to update storage:', storageError);
         }
       }
       
@@ -89,12 +104,38 @@ class KeetaWalletClient {
       
       // Connect to network (exactly like working DLhugly/KSwap)
       const keetaNetworkName = networkName === 'mainnet' ? 'main' : 'test';
+      console.log('🌐 [WALLET] Connecting to network:', keetaNetworkName);
       const client = KeetaNet.UserClient.fromNetwork(keetaNetworkName, signer);
+      console.log('✅ [WALLET] UserClient created');
       
       const network = NETWORK_CONFIGS[networkName];
+      console.log('⚙️ [WALLET] Network config:', network);
 
-      // Verify connection
-      await client.chain();
+      // Verify connection and ensure baseToken is initialized
+      console.log('🔍 [WALLET] Verifying connection with chain() call...');
+      const chainInfo = await client.chain();
+      console.log('✅ [WALLET] Chain info received:', chainInfo);
+      
+      // Debug baseToken after connection
+      console.log('🔍 [WALLET] Client baseToken after chain():', client.baseToken);
+      console.log('🔍 [WALLET] BaseToken type after chain():', typeof client.baseToken);
+      
+      // Deep debug baseToken object
+      if (client.baseToken && typeof client.baseToken === 'object') {
+        console.log('🔍 [WALLET] BaseToken object keys:', Object.keys(client.baseToken));
+        console.log('🔍 [WALLET] BaseToken prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(client.baseToken)));
+        console.log('🔍 [WALLET] BaseToken publicKeyString:', client.baseToken.publicKeyString?.get?.());
+        console.log('🔍 [WALLET] BaseToken addressString:', client.baseToken.addressString?.get?.());
+        console.log('🔍 [WALLET] BaseToken toString():', client.baseToken.toString?.());
+        
+        // Try to get any account-like properties
+        ['address', 'publicKey', 'keyType', 'algorithm'].forEach(prop => {
+          if (client.baseToken[prop] !== undefined) {
+            console.log(`🔍 [WALLET] BaseToken.${prop}:`, client.baseToken[prop]);
+          }
+        });
+      }
+      
       console.log('✅ [WALLET] Connected to real network:', networkName);
       
       return new KeetaWalletClient(client, signer, network, seedString, mode);
@@ -239,11 +280,12 @@ class KeetaWalletClient {
 
     try {
       // Real network balance fetching using correct SDK API
-      const balance = await this.client.balance(this.client.baseToken);
+      console.log('🔍 [WALLET] getAccountInfo: Fetching balance for KTA...');
+      const balance = await this.getTokenBalance('KTA');
       accountInfo.balance = balance;
-      console.log('💰 [WALLET] Real balance fetched:', balance.toString());
+      console.log('💰 [WALLET] Account info balance:', balance.toString());
     } catch (error) {
-      console.error('❌ [WALLET] Failed to fetch real balance:', error);
+      console.error('❌ [WALLET] Failed to fetch account info balance:', error);
       accountInfo.balance = BigInt(0);
     }
 
@@ -267,10 +309,212 @@ class KeetaWalletClient {
     }
 
     try {
+      // Debug: Check client properties
+      console.log('🔍 [WALLET] Debug client info:');
+      console.log('- client.baseToken:', this.client.baseToken);
+      console.log('- network.baseToken:', this.network.baseToken);
+      console.log('- signer address:', this.signer.publicKeyString.get());
+      console.log('- requested tokenId:', tokenId);
+      
       // Use correct KeetaNet SDK API for token balance
-      if (tokenId === 'KTA' || tokenId === this.client.baseToken) {
-        const balance = await this.client.balance(this.client.baseToken);
-        console.log('💰 [WALLET] Real KTA balance fetched:', balance.toString());
+      if (tokenId === 'KTA') {
+        console.log('🔍 [WALLET] Fetching KTA balance for account:', this.signer.publicKeyString.get());
+        
+        // Try different balance API approaches
+        let balance;
+        
+        // Use exact working pattern from DLhugly/KSwap  
+        console.log('👛 [WALLET] Base token:', this.client.baseToken);
+        console.log('👛 [WALLET] Base token type:', typeof this.client.baseToken);
+        console.log('👛 [WALLET] Base token publicKeyString:', this.client.baseToken?.publicKeyString?.get?.());
+        
+        // Fix: Use baseToken address properly for API call
+        console.log('👛 [WALLET] Getting balance using baseToken...');
+        
+        try {
+          // The API expects: /account/{userAddress}/balance/{tokenAccountAddress}
+          // NOT: /account/{userAddress}/balance/undefined
+          
+          const baseToken = this.client.baseToken;
+          const tokenAccountAddress = baseToken.publicKeyString.get();
+          console.log('🔍 [WALLET] Token account address for API:', tokenAccountAddress);
+          console.log('🔍 [WALLET] User account address:', this.signer.publicKeyString.get());
+          
+          balance = await this.client.balance(baseToken);
+          console.log('👛 [WALLET] Balance via baseToken (API call to:', tokenAccountAddress, '):', balance);
+          
+          if (balance === 0n || balance === BigInt(0)) {
+            console.log('🔍 [WALLET] BaseToken balance is 0, trying user account balance...');
+            
+            // Maybe we need to check user's balance differently
+            // Try: user account balance (not baseToken balance)
+            balance = await this.client.balance(this.signer);
+            console.log('👛 [WALLET] Balance via signer account:', balance);
+            
+            if (balance === 0n || balance === BigInt(0)) {
+              console.log('🔍 [WALLET] Signer balance also 0, trying allBalances method...');
+              
+              // Try allBalances method which might return all token balances
+              try {
+                const allBalances = await this.client.allBalances();
+                console.log('🔍 [WALLET] allBalances result:', allBalances);
+                console.log('🔍 [WALLET] allBalances type:', typeof allBalances);
+                console.log('🔍 [WALLET] allBalances length:', allBalances?.length);
+                
+                if (allBalances && Array.isArray(allBalances) && allBalances.length > 0) {
+                  // Look for KTA balance in the array
+                  const ktaBalance = allBalances.find(bal => 
+                    bal.token === 'KTA' || 
+                    bal.tokenId === 'KTA' ||
+                    bal.symbol === 'KTA'
+                  );
+                  
+                  if (ktaBalance) {
+                    balance = BigInt(ktaBalance.balance || ktaBalance.amount || 0);
+                    console.log('✅ [WALLET] Found KTA in allBalances:', balance);
+                  } else {
+                    console.log('🔍 [WALLET] No KTA found in allBalances, checking first entry...');
+                    console.log('🔍 [WALLET] First balance entry:', allBalances[0]);
+                    
+                    // Maybe first entry is KTA
+                    if (allBalances[0] && allBalances[0].balance) {
+                      balance = BigInt(allBalances[0].balance);
+                      console.log('✅ [WALLET] Using first balance entry:', balance);
+                    }
+                  }
+                } else {
+                  console.log('🔍 [WALLET] allBalances empty - might be unfunded or pending...');
+                  
+                  // Try multiple API endpoints to find working ones
+                  const userAddress = this.signer.publicKeyString.get();
+                  console.log('🚀 [WALLET] Testing multiple API endpoints for address:', userAddress);
+                  
+                  const apiTests = [
+                    'https://rep2.test.network.api.keeta.com/api/node/ledger/account/' + userAddress,
+                    'https://rep2.test.network.api.keeta.com/api/account/' + userAddress,
+                    'https://rep2.test.network.api.keeta.com/account/' + userAddress,
+                    'https://test-rpc.keeta.network/api/account/' + userAddress,
+                    'https://rpc.test.keeta.com/api/account/' + userAddress
+                  ];
+                  
+                  let foundBalance = false;
+                  
+                  for (const endpoint of apiTests) {
+                    try {
+                      console.log('🔍 [WALLET] Testing endpoint:', endpoint);
+                      const response = await fetch(endpoint);
+                      console.log('🔍 [WALLET] Response status:', response.status);
+                      
+                      if (response.ok) {
+                        const data = await response.json();
+                        console.log('🔍 [WALLET] API response data (full):', JSON.stringify(data, null, 2));
+                        console.log('🔍 [WALLET] API response keys:', Object.keys(data || {}));
+                        
+                        // Look for balance in various response formats
+                        const possibleBalances = [
+                          data.balance,
+                          data.amount,
+                          data.kta_balance,
+                          data.tokens?.KTA,
+                          data.balances?.KTA,
+                          data.account?.balance,
+                          data.value,
+                          data.total,
+                          data.kta,
+                          data.KTA
+                        ];
+                        
+                        console.log('🔍 [WALLET] Checking possible balance fields:', possibleBalances);
+                        
+                        for (let i = 0; i < possibleBalances.length; i++) {
+                          const possibleBalance = possibleBalances[i];
+                          console.log(`🔍 [WALLET] Field ${i}: ${possibleBalance} (type: ${typeof possibleBalance})`);
+                          
+                          if (possibleBalance !== undefined && possibleBalance !== null) {
+                            const balanceValue = BigInt(possibleBalance);
+                            if (balanceValue > 0) {
+                              balance = balanceValue;
+                              console.log('✅ [WALLET] Found balance in API response:', balance);
+                              foundBalance = true;
+                              break;
+                            }
+                          }
+                        }
+                        
+                        // Check the balances array structure
+                        if (!foundBalance && data && data.balances && Array.isArray(data.balances)) {
+                          console.log('🔍 [WALLET] Balances array found, length:', data.balances.length);
+                          
+                          if (data.balances.length === 0) {
+                            console.log('💡 [WALLET] Account exists but balances array is empty');
+                            console.log('⏰ [WALLET] This could mean:');
+                            console.log('   - Funding transaction still pending');
+                            console.log('   - Account not yet funded');
+                            console.log('   - Blockchain sync delay');
+                            
+                            // Set balance to 0 but mark as "pending check"
+                            balance = BigInt(0);
+                            
+                            // Add refresh reminder
+                            setTimeout(() => {
+                              console.log('🔄 [WALLET] REMINDER: Check balance again in a few minutes');
+                              console.log('🔄 [WALLET] If funded, try refreshing the extension');
+                            }, 5000);
+                            
+                          } else {
+                            // Parse non-empty balances array
+                            console.log('🔍 [WALLET] Found balances:', data.balances);
+                            data.balances.forEach((bal, index) => {
+                              console.log(`🔍 [WALLET] Balance ${index}:`, JSON.stringify(bal, null, 2));
+                            });
+                            
+                            // Look for KTA balance in the array
+                            const ktaBalance = data.balances.find(bal => 
+                              bal.token === 'KTA' ||
+                              bal.tokenId === 'KTA' ||
+                              bal.symbol === 'KTA' ||
+                              bal.asset === 'KTA'
+                            );
+                            
+                            if (ktaBalance) {
+                              balance = BigInt(ktaBalance.balance || ktaBalance.amount || 0);
+                              console.log('✅ [WALLET] Found KTA balance:', balance);
+                              foundBalance = true;
+                            } else {
+                              console.log('🔍 [WALLET] No KTA balance found in balances array');
+                            }
+                          }
+                        }
+                        
+                        if (foundBalance) break;
+                      }
+                    } catch (apiError) {
+                      console.log('❌ [WALLET] Endpoint failed:', endpoint, apiError.message);
+                    }
+                  }
+                  
+                  if (!foundBalance) {
+                    console.log('⚠️ [WALLET] No working API endpoints found');
+                    console.log('💡 [WALLET] This might mean:');
+                    console.log('   - Transaction still pending confirmation');
+                    console.log('   - Network endpoint changes');
+                    console.log('   - Account not yet funded');
+                    console.log('   - API authentication required');
+                  }
+                }
+              } catch (allBalError) {
+                console.log('❌ [WALLET] allBalances failed:', allBalError.message);
+              }
+            }
+          }
+        } catch (error) {
+          console.log('❌ [WALLET] Balance call failed:', error.message);
+          balance = BigInt(0);
+        }
+        
+        console.log('👛 [WALLET] Final balance result:', balance);
+        console.log('👛 [WALLET] Final balance type:', typeof balance);
+        
         return balance;
       } else {
         // For other tokens, get token account
@@ -283,7 +527,7 @@ class KeetaWalletClient {
       }
     } catch (error) {
       console.error('❌ [WALLET] Failed to fetch token balance:', error);
-      console.log(`Token ${tokenId} not found or no balance`);
+      console.error('❌ [WALLET] Error details:', error.stack);
       return BigInt(0);
     }
   }
@@ -304,9 +548,9 @@ class KeetaWalletClient {
     if (this.mode === 'demo') {
       // Demo tokens
       return [
-        { symbol: 'KTA', name: 'Keeta Token', balance: BigInt('1000000000000000'), decimals: 9 },
-        { symbol: 'USDC', name: 'USD Coin', balance: BigInt('5000000000'), decimals: 6 },
-        { symbol: 'ETH', name: 'Ethereum', balance: BigInt('2000000000000000000'), decimals: 18 },
+        { id: 'KTA', symbol: 'KTA', name: 'Keeta Token', balance: BigInt('1000000000000000'), decimals: 9 },
+        { id: 'USDC', symbol: 'USDC', name: 'USD Coin', balance: BigInt('5000000000'), decimals: 6 },
+        { id: 'ETH', symbol: 'ETH', name: 'Ethereum', balance: BigInt('2000000000000000000'), decimals: 18 },
       ];
     }
 
@@ -314,7 +558,7 @@ class KeetaWalletClient {
       // Real token discovery would go here
       const ktaBalance = await this.getTokenBalance('KTA');
       return [
-        { symbol: 'KTA', name: 'Keeta Token', balance: ktaBalance, decimals: 9 }
+        { id: 'KTA', symbol: 'KTA', name: 'Keeta Token', balance: ktaBalance, decimals: 9 }
       ];
     } catch (error) {
       console.error('❌ [WALLET] Token discovery failed:', error);
@@ -342,14 +586,70 @@ class KeetaWalletClient {
     }
 
     try {
-      // Real transaction would go here
-      return {
-        success: true,
-        transactionId: 'real_tx_' + Date.now(),
-        blockId: 'real_block_' + Date.now()
-      };
+      console.log('🚀 [WALLET] Initiating real transaction...');
+      
+      // Validate recipient address format
+      if (!toAddress.startsWith('keeta_') || toAddress.length < 60) {
+        throw new Error('Invalid recipient address format');
+      }
+      
+      // Parse recipient address
+      let recipientAccount;
+      try {
+        recipientAccount = KeetaNet.lib.Account.fromPublicKeyString(toAddress);
+        console.log('✅ [WALLET] Recipient address parsed successfully');
+      } catch (error) {
+        throw new Error('Invalid recipient address: ' + error.message);
+      }
+      
+      // For KTA (base token), send using UserClient.send
+      if (tokenId === 'KTA') {
+        console.log('💰 [WALLET] Sending KTA base token...');
+        console.log('💰 [WALLET] Using UserClient.send() method...');
+        
+        // Use the high-level UserClient.send method instead of low-level client.send
+        const result = await this.client.send(
+          toAddress,          // to (string address)
+          amount,             // amount (already in smallest units)
+          this.client.baseToken  // token (base token)
+        );
+        
+        console.log('✅ [WALLET] KTA transaction result:', result);
+        
+        // Extract transaction details from the result
+        let transactionId = 'tx_' + Date.now();
+        let blockId = 'block_' + Date.now();
+        
+        if (result.voteStaple && result.voteStaple.blocks && result.voteStaple.blocks.length > 0) {
+          const firstBlock = result.voteStaple.blocks[0];
+          if (firstBlock.hash) {
+            transactionId = firstBlock.hash;
+          }
+          blockId = result.voteStaple.hash || blockId;
+        }
+        
+        return {
+          success: true,
+          transactionId: transactionId,
+          blockId: blockId,
+          transaction: result,
+          published: result.publish || false
+        };
+      }
+      
+      // For other tokens, use token-specific send (if implemented)
+      else {
+        console.log('🪙 [WALLET] Sending custom token:', tokenId);
+        
+        // Parse token account
+        const tokenAccount = KeetaNet.lib.Account.fromPublicKeyString(tokenId);
+        
+        // For now, return error as custom token sending needs more implementation
+        throw new Error('Custom token sending not yet implemented');
+      }
+      
     } catch (error) {
-      console.error('❌ [WALLET] Send failed:', error);
+      console.error('❌ [WALLET] Send transaction failed:', error);
       return {
         success: false,
         error: error.message

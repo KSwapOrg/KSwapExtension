@@ -126,6 +126,7 @@ class KeetaWalletClient {
     
     this.tokens = [
       { 
+        id: 'KTA',
         symbol: 'KTA', 
         name: 'Keeta Token', 
         balance: await this.getTokenBalance('KTA'), 
@@ -133,6 +134,7 @@ class KeetaWalletClient {
         logoUri: '/icons/kta-logo.png'
       },
       { 
+        id: 'USDC',
         symbol: 'USDC', 
         name: 'USD Coin', 
         balance: await this.getTokenBalance('USDC'), 
@@ -140,6 +142,7 @@ class KeetaWalletClient {
         logoUri: '/icons/usdc-logo.png'
       },
       { 
+        id: 'ETH',
         symbol: 'ETH', 
         name: 'Ethereum', 
         balance: await this.getTokenBalance('ETH'), 

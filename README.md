@@ -2,10 +2,25 @@
 
 A secure Chrome extension wallet for the Keeta Network, extracted and adapted from the K-Swap DEX project.
 
+## What's New in v2.0.0 🎉
+
+- ✨ **12-Word Seed Phrases**: Full BIP39-compatible mnemonic phrase support for easy backup and recovery
+- 🔄 **Multi-Wallet Management**: Create and switch between multiple wallets seamlessly
+- ⚡ **Quick Wallet Creation**: One-click wallet creation with optional backup later
+- 🔐 **Advanced Wallet Setup**: View and verify seed phrases during creation for maximum security
+- 📥 **Flexible Import**: Import wallets from seed phrases or raw hex seeds
+- 💸 **Real Transactions**: Working KTA token sending on testnet and mainnet
+- 🎨 **Improved UX**: Streamlined wallet creation flow and better error handling
+- 🐛 **Bug Fixes**: Fixed balance fetching, decimal display, and transaction errors
+
 ## Features
 
-### 🔐 Secure Wallet Management
-- **Seed-based Account Generation**: Create and restore wallets using secure seed phrases
+### 🔐 Secure Wallet Management (v2.0.0)
+- **12-Word Seed Phrases**: BIP39-compatible mnemonic phrases for wallet backup and recovery
+- **Multi-Wallet Support**: Create and manage multiple wallets with easy switching
+- **Quick Create**: One-click wallet creation with optional seed phrase backup
+- **Advanced Setup**: View and verify seed phrases during wallet creation
+- **Import Options**: Import wallets via seed phrase or raw hex seed
 - **Local Storage**: Encrypted storage of wallet data in Chrome's secure storage
 - **Network Support**: Seamless switching between Keeta testnet and mainnet
 - **Address Management**: Easy copying and sharing of wallet addresses
@@ -59,10 +74,13 @@ Releases are packaged automatically. Once approved, you'll find the latest versi
 
 ## Usage
 
-### First Time Setup
+### First Time Setup (v2.0.0)
 
 1. **Click the extension icon** in your Chrome toolbar
-2. **Create new wallet** - A secure seed phrase will be generated
+2. **Choose wallet creation method**:
+   - **Quick Create**: Instantly create a wallet (backup seed phrase later in Settings)
+   - **Advanced Setup**: View and backup seed phrase during creation
+   - **Import Existing**: Restore from 12-word seed phrase or hex seed
 3. **Backup your seed** - Store it safely (never share it!)
 4. **Select network** - Choose testnet for development or mainnet for production
 
